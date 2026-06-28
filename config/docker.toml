@@ -1,0 +1,6 @@
+bind_addr = "0.0.0.0:4000"
+telemetry_path = "samples/session.jsonl"
+max_speed_units_per_second = 10.0
+movement_tolerance_units = 0.15
+fixed_tick_ms = 100
+fire_cooldown_ms = 500

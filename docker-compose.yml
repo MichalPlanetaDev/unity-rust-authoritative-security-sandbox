@@ -1,0 +1,56 @@
+services:
+  server:
+    build: .
+    working_dir: /workspace
+    command: server config/docker.toml
+    ports:
+      - "4000:4000"
+    volumes:
+      - .:/workspace
+
+  bot-normal:
+    build: .
+    working_dir: /workspace
+    environment:
+      SERVER_ADDR: server:4000
+    command: bot normal
+    volumes:
+      - .:/workspace
+    depends_on:
+      - server
+
+  bot-suspicious:
+    build: .
+    working_dir: /workspace
+    environment:
+      SERVER_ADDR: server:4000
+    command: bot suspicious
+    volumes:
+      - .:/workspace
+    depends_on:
+      - server
+
+  bot-sequence:
+    build: .
+    working_dir: /workspace
+    environment:
+      SERVER_ADDR: server:4000
+    command: bot sequence
+    volumes:
+      - .:/workspace
+    depends_on:
+      - server
+
+  summary:
+    build: .
+    working_dir: /workspace
+    command: cli summary samples/session.jsonl
+    volumes:
+      - .:/workspace
+
+  risk:
+    build: .
+    working_dir: /workspace
+    command: cli risk samples/session.jsonl
+    volumes:
+      - .:/workspace

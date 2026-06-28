@@ -1,14 +1,18 @@
 # unity-rust-authoritative-security-sandbox
 
-A multiplayer-security portfolio project combining a Unity client, Rust authoritative server, custom client/server protocol, telemetry, bot-driven suspicious traffic, and investigation tooling.
+A portfolio project combining a Unity client, Rust authoritative server, custom client/server protocol, telemetry, bot-driven suspicious traffic, Dockerized networking demos, and investigation tooling.
 
-The first milestone implements the Rust networking backbone:
+Current milestone:
 
     Rust bot -> TCP JSON protocol -> Rust authoritative server -> JSONL telemetry -> CLI summary/risk
 
-## Current milestone
+Planned full pipeline:
 
-- TCP server in Rust
+    Unity client -> Rust authoritative server -> telemetry -> investigation tools
+
+## Current status
+
+- Rust TCP server
 - Line-delimited JSON protocol
 - Server-authoritative movement validation
 - Fire cooldown validation
@@ -17,8 +21,18 @@ The first milestone implements the Rust networking backbone:
 - JSONL telemetry output
 - CLI telemetry summary
 - CLI player risk scoring
+- Docker Compose networking demo
+- Rust CI and Docker CI
 
-## Run
+## Architecture
+
+    bot-normal / bot-suspicious / bot-sequence
+        -> TCP JSON messages
+            -> server
+                -> JSONL telemetry
+                    -> cli summary / cli risk
+
+## Local run
 
 Terminal 1:
 
@@ -26,10 +40,32 @@ Terminal 1:
 
 Terminal 2:
 
+    cargo run -p bot -- normal
     cargo run -p bot -- suspicious
+    cargo run -p bot -- sequence
     cargo run -p cli -- summary samples/session.jsonl
     cargo run -p cli -- risk samples/session.jsonl
 
+## Docker run
+
+    just docker-demo
+
+or:
+
+    ./scripts/docker-demo.sh
+
+## Config
+
+Local server config:
+
+    config/default.toml
+
+Docker server config:
+
+    config/docker.toml
+
 ## Scope
 
-This is a defensive portfolio project. It does not include cheats, bypasses, injectors, malware, commercial game reverse engineering, or instructions for attacking third-party software.
+This is a portfolio project.
+
+It does not include cheats, bypasses, injectors, malware, commercial game reverse engineering, or instructions for attacking third-party software.

@@ -1,12 +1,13 @@
 use std::{
     io::{self, BufRead, BufReader, Write},
     net::TcpStream,
-    time::Duration,
+    thread,
+    time::{Duration, Instant},
 };
 
 use protocol::{ClientMessage, InputCommand, PlayerId, Vec2};
 
-const SERVER_ADDR: &str = "127.0.0.1:4000";
+const DEFAULT_SERVER_ADDR: &str = "127.0.0.1:4000";
 
 fn main() {
     if let Err(error) = run() {
@@ -19,6 +20,9 @@ fn run() -> io::Result<()> {
     let scenario = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "normal".to_string());
+
+    let server_addr =
+        std::env::var("SERVER_ADDR").unwrap_or_else(|_| DEFAULT_SERVER_ADDR.to_string());
 
     let (player_id, commands) = match scenario.as_str() {
         "normal" => (PlayerId(1), normal_commands(PlayerId(1))),
@@ -35,12 +39,12 @@ fn run() -> io::Result<()> {
         }
     };
 
-    println!("Connecting to {SERVER_ADDR}");
+    println!("Connecting to {server_addr}");
     println!("Scenario: {scenario}");
     println!("Player: {:?}", player_id);
     println!();
 
-    let mut stream = TcpStream::connect(SERVER_ADDR)?;
+    let mut stream = connect_with_retry(&server_addr, Duration::from_secs(10))?;
     let reader_stream = stream.try_clone()?;
     let mut reader = BufReader::new(reader_stream);
 
@@ -48,10 +52,32 @@ fn run() -> io::Result<()> {
 
     for command in commands {
         send_message(&mut stream, &mut reader, &ClientMessage::Input(command))?;
-        std::thread::sleep(Duration::from_millis(100));
+        thread::sleep(Duration::from_millis(100));
     }
 
     Ok(())
+}
+
+fn connect_with_retry(addr: &str, timeout: Duration) -> io::Result<TcpStream> {
+    let started_at = Instant::now();
+    let mut last_error = None;
+
+    while started_at.elapsed() < timeout {
+        match TcpStream::connect(addr) {
+            Ok(stream) => return Ok(stream),
+            Err(error) => {
+                last_error = Some(error);
+                thread::sleep(Duration::from_millis(200));
+            }
+        }
+    }
+
+    Err(last_error.unwrap_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::TimedOut,
+            format!("timed out connecting to {addr}"),
+        )
+    }))
 }
 
 fn print_help() {
@@ -59,6 +85,9 @@ fn print_help() {
     println!("  cargo run -p bot -- normal");
     println!("  cargo run -p bot -- suspicious");
     println!("  cargo run -p bot -- sequence");
+    println!();
+    println!("Environment:");
+    println!("  SERVER_ADDR=127.0.0.1:4000");
 }
 
 fn send_message(

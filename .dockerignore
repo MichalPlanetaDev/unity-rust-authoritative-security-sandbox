@@ -1,0 +1,7 @@
+target/
+.git/
+samples/*.jsonl
+reports/*.csv
+*.log
+.env
+.env.*
