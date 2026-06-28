@@ -1,0 +1,196 @@
+use serde::{Deserialize, Serialize};
+
+pub type SequenceNumber = u64;
+pub type Milliseconds = u64;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub struct PlayerId(pub u64);
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct Vec2 {
+    pub x: f32,
+    pub y: f32,
+}
+
+impl Vec2 {
+    pub const ZERO: Self = Self { x: 0.0, y: 0.0 };
+
+    pub const fn new(x: f32, y: f32) -> Self {
+        Self { x, y }
+    }
+
+    pub fn length(self) -> f32 {
+        (self.x * self.x + self.y * self.y).sqrt()
+    }
+
+    pub fn distance(self, other: Self) -> f32 {
+        Self {
+            x: self.x - other.x,
+            y: self.y - other.y,
+        }
+        .length()
+    }
+
+    pub fn normalized(self) -> Self {
+        let length = self.length();
+
+        if length <= f32::EPSILON {
+            Self::ZERO
+        } else {
+            Self {
+                x: self.x / length,
+                y: self.y / length,
+            }
+        }
+    }
+
+    pub fn scaled(self, factor: f32) -> Self {
+        Self {
+            x: self.x * factor,
+            y: self.y * factor,
+        }
+    }
+
+    pub fn add_vector(self, other: Self) -> Self {
+        Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct InputCommand {
+    pub player_id: PlayerId,
+    pub sequence: SequenceNumber,
+    pub client_time_ms: Milliseconds,
+    pub movement: Vec2,
+    pub fire: bool,
+    pub claimed_position: Option<Vec2>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum ClientMessage {
+    Join { player_id: PlayerId },
+    Input(InputCommand),
+    Ping { client_time_ms: Milliseconds },
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PlayerSnapshot {
+    pub player_id: PlayerId,
+    pub position: Vec2,
+    pub health: i32,
+    pub alive: bool,
+    pub server_time_ms: Milliseconds,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum ServerMessage {
+    Welcome {
+        player_id: PlayerId,
+    },
+    Snapshot(PlayerSnapshot),
+    Rejected {
+        reason: String,
+    },
+    Pong {
+        client_time_ms: Milliseconds,
+        server_time_ms: Milliseconds,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum SuspicionKind {
+    SpeedHack,
+    FireRateViolation,
+    InvalidStateTransition,
+    PacketSequenceViolation,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SuspicionReport {
+    pub player_id: PlayerId,
+    pub sequence: SequenceNumber,
+    pub kind: SuspicionKind,
+    pub reason: String,
+    pub observed_value: f32,
+    pub expected_limit: f32,
+    pub server_time_ms: Milliseconds,
+}
+
+impl SuspicionReport {
+    pub fn new(
+        player_id: PlayerId,
+        sequence: SequenceNumber,
+        kind: SuspicionKind,
+        reason: impl Into<String>,
+        observed_value: f32,
+        expected_limit: f32,
+        server_time_ms: Milliseconds,
+    ) -> Self {
+        Self {
+            player_id,
+            sequence,
+            kind,
+            reason: reason.into(),
+            observed_value,
+            expected_limit,
+            server_time_ms,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum TelemetryEvent {
+    ClientConnected {
+        player_id: PlayerId,
+        server_time_ms: Milliseconds,
+    },
+    CommandAccepted(InputCommand),
+    PlayerSnapshot(PlayerSnapshot),
+    Suspicion(SuspicionReport),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn calculates_distance() {
+        let a = Vec2::new(0.0, 0.0);
+        let b = Vec2::new(3.0, 4.0);
+
+        assert_eq!(a.distance(b), 5.0);
+    }
+
+    #[test]
+    fn normalizes_non_zero_vector() {
+        let vector = Vec2::new(10.0, 0.0).normalized();
+
+        assert_eq!(vector, Vec2::new(1.0, 0.0));
+    }
+
+    #[test]
+    fn keeps_zero_vector_zero_when_normalized() {
+        assert_eq!(Vec2::ZERO.normalized(), Vec2::ZERO);
+    }
+
+    #[test]
+    fn creates_suspicion_report() {
+        let report = SuspicionReport::new(
+            PlayerId(7),
+            42,
+            SuspicionKind::SpeedHack,
+            "movement exceeded server budget",
+            20.0,
+            1.15,
+            500,
+        );
+
+        assert_eq!(report.player_id, PlayerId(7));
+        assert_eq!(report.sequence, 42);
+        assert_eq!(report.kind, SuspicionKind::SpeedHack);
+        assert_eq!(report.server_time_ms, 500);
+    }
+}
