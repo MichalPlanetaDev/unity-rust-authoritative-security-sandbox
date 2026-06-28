@@ -54,6 +54,18 @@ or:
 
     ./scripts/docker-demo.sh
 
+## Unity client
+
+The repository includes first-pass Unity TCP client scripts under:
+
+    unity-client/Assets/Scripts/Networking
+
+The Unity client can connect to the Rust server, send movement/fire input, receive authoritative snapshots, and send controlled suspicious inputs for local testing.
+
+See:
+
+    docs/unity-client.md
+
 ## Config
 
 Local server config:

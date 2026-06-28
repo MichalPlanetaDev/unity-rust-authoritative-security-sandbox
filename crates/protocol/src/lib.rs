@@ -70,6 +70,7 @@ pub struct InputCommand {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type", content = "data")]
 pub enum ClientMessage {
     Join { player_id: PlayerId },
     Input(InputCommand),
@@ -86,6 +87,7 @@ pub struct PlayerSnapshot {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type", content = "data")]
 pub enum ServerMessage {
     Welcome {
         player_id: PlayerId,
@@ -142,6 +144,7 @@ impl SuspicionReport {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type", content = "data")]
 pub enum TelemetryEvent {
     ClientConnected {
         player_id: PlayerId,
@@ -192,5 +195,50 @@ mod tests {
         assert_eq!(report.sequence, 42);
         assert_eq!(report.kind, SuspicionKind::SpeedHack);
         assert_eq!(report.server_time_ms, 500);
+    }
+
+    #[test]
+    fn serializes_client_message_with_type_field() {
+        let message = ClientMessage::Join {
+            player_id: PlayerId(1),
+        };
+
+        let json = serde_json::to_string(&message).expect("message should serialize");
+
+        assert!(json.contains("\"type\":\"Join\""));
+        assert!(json.contains("\"player_id\":1"));
+    }
+
+    #[test]
+    fn serializes_input_message_with_type_field() {
+        let message = ClientMessage::Input(InputCommand {
+            player_id: PlayerId(1),
+            sequence: 10,
+            client_time_ms: 1000,
+            movement: Vec2::new(1.0, 0.0),
+            fire: false,
+            claimed_position: Some(Vec2::new(2.0, 0.0)),
+        });
+
+        let json = serde_json::to_string(&message).expect("message should serialize");
+
+        assert!(json.contains("\"type\":\"Input\""));
+        assert!(json.contains("\"sequence\":10"));
+        assert!(json.contains("\"claimed_position\""));
+    }
+
+    #[test]
+    fn deserializes_client_message_with_type_field() {
+        let json = r#"{"type":"Join","data":{"player_id":1}}"#;
+
+        let message: ClientMessage =
+            serde_json::from_str(json).expect("message should deserialize");
+
+        assert_eq!(
+            message,
+            ClientMessage::Join {
+                player_id: PlayerId(1)
+            }
+        );
     }
 }
