@@ -1,4 +1,4 @@
-# unity-rust-authoritative-security-sandbox
+# Rust-auth sandbox
 
 A portfolio project combining a Unity client, Rust authoritative server, custom client/server protocol, telemetry, bot-driven suspicious traffic, Dockerized networking demos, and investigation tooling.
 
