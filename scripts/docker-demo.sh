@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export HOST_UID="${HOST_UID:-$(id -u)}"
+export HOST_GID="${HOST_GID:-$(id -g)}"
+
+mkdir -p samples reports
 rm -f samples/session.jsonl
 
 docker compose up -d server
@@ -19,3 +23,8 @@ docker compose run --rm risk
 
 test -f samples/session.jsonl
 grep -q "Suspicion" samples/session.jsonl
+
+echo
+echo "Docker demo finished successfully."
+echo "Telemetry owner:"
+stat -c '%U %G %a %n' samples/session.jsonl || true

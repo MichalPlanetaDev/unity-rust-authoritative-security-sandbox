@@ -31,25 +31,25 @@ docker-build:
     docker build -t unity-rust-authoritative-security-sandbox .
 
 docker-up:
-    docker compose up -d server
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose up -d server
 
 docker-down:
     docker compose down --remove-orphans
 
 docker-bot-normal:
-    docker compose run --rm bot-normal
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm bot-normal
 
 docker-bot-suspicious:
-    docker compose run --rm bot-suspicious
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm bot-suspicious
 
 docker-bot-sequence:
-    docker compose run --rm bot-sequence
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm bot-sequence
 
 docker-summary:
-    docker compose run --rm summary
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm summary
 
 docker-risk:
-    docker compose run --rm risk
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm risk
 
 docker-demo:
     ./scripts/docker-demo.sh

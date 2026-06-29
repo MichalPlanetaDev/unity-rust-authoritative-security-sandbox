@@ -30,3 +30,16 @@ or:
     just docker-demo
 
 The full demo starts the server, runs normal/suspicious/sequence bot scenarios, summarizes telemetry, prints player risk, verifies that telemetry exists, and shuts the server down.
+
+## File ownership
+
+Docker Compose runs services with the host UID/GID through:
+
+    HOST_UID
+    HOST_GID
+
+The demo script sets these automatically:
+
+    ./scripts/docker-demo.sh
+
+This prevents generated files such as `samples/session.jsonl` from being owned by root after Docker runs.
