@@ -109,6 +109,7 @@ pub enum SuspicionKind {
     FireRateViolation,
     InvalidStateTransition,
     PacketSequenceViolation,
+    ClientTimeViolation,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -205,6 +206,23 @@ mod tests {
         assert_eq!(report.sequence, 42);
         assert_eq!(report.kind, SuspicionKind::SpeedHack);
         assert_eq!(report.server_time_ms, 500);
+    }
+
+    #[test]
+    fn creates_client_time_suspicion_report() {
+        let report = SuspicionReport::new(
+            PlayerId(4),
+            3,
+            SuspicionKind::ClientTimeViolation,
+            "client timestamp jumped too far forward",
+            5_000.0,
+            250.0,
+            750,
+        );
+
+        assert_eq!(report.player_id, PlayerId(4));
+        assert_eq!(report.sequence, 3);
+        assert_eq!(report.kind, SuspicionKind::ClientTimeViolation);
     }
 
     #[test]

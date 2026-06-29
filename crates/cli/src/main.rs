@@ -301,5 +301,6 @@ fn risk_weight(kind: &SuspicionKind) -> u32 {
         SuspicionKind::FireRateViolation => 25,
         SuspicionKind::InvalidStateTransition => 35,
         SuspicionKind::PacketSequenceViolation => 20,
+        SuspicionKind::ClientTimeViolation => 20,
     }
 }

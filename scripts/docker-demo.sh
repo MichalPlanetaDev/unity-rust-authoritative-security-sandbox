@@ -7,6 +7,9 @@ export HOST_GID="${HOST_GID:-$(id -g)}"
 mkdir -p samples reports
 rm -f samples/session.jsonl
 
+docker compose down --remove-orphans
+docker compose build
+
 docker compose up -d server
 
 cleanup() {
@@ -18,11 +21,13 @@ trap cleanup EXIT
 docker compose run --rm bot-normal
 docker compose run --rm bot-suspicious
 docker compose run --rm bot-sequence
+docker compose run --rm bot-timing
 docker compose run --rm summary
 docker compose run --rm risk
 
 test -f samples/session.jsonl
 grep -q "Suspicion" samples/session.jsonl
+grep -q "ClientTimeViolation" samples/session.jsonl
 
 echo
 echo "Docker demo finished successfully."

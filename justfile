@@ -56,3 +56,9 @@ docker-risk:
 
 docker-demo:
     ./scripts/docker-demo.sh
+
+bot-timing:
+    cargo run -p bot -- timing
+
+docker-bot-timing:
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm bot-timing

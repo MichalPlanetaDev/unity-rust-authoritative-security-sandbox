@@ -25,6 +25,8 @@ Planned full pipeline:
 - Rust CI and Docker CI
 - Connection lifecycle telemetry
 - Server-side session replay timeline
+- Client timestamp anomaly detection
+- Timing violation bot scenario
 
 ## Architecture
 
@@ -53,6 +55,10 @@ Terminal 2:
 Replay ordered telemetry timeline:
 
     cargo run -p cli -- timeline samples/session.jsonl
+
+Timing anomaly bot:
+
+    cargo run -p bot -- timing
 
 ## Docker run
 

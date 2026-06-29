@@ -28,6 +28,7 @@ fn run() -> io::Result<()> {
         "normal" => (PlayerId(1), normal_commands(PlayerId(1))),
         "suspicious" => (PlayerId(2), suspicious_commands(PlayerId(2))),
         "sequence" => (PlayerId(3), sequence_violation_commands(PlayerId(3))),
+        "timing" => (PlayerId(4), timing_violation_commands(PlayerId(4))),
         "help" | "--help" | "-h" => {
             print_help();
             return Ok(());
@@ -85,6 +86,7 @@ fn print_help() {
     println!("  cargo run -p bot -- normal");
     println!("  cargo run -p bot -- suspicious");
     println!("  cargo run -p bot -- sequence");
+    println!("  cargo run -p bot -- timing");
     println!();
     println!("Environment:");
     println!("  SERVER_ADDR=127.0.0.1:4000");
@@ -206,6 +208,35 @@ fn sequence_violation_commands(player_id: PlayerId) -> Vec<InputCommand> {
             Vec2::new(1.0, 0.0),
             false,
             Some(Vec2::new(2.0, 0.0)),
+        ),
+    ]
+}
+
+fn timing_violation_commands(player_id: PlayerId) -> Vec<InputCommand> {
+    vec![
+        input(
+            player_id,
+            1,
+            100,
+            Vec2::new(1.0, 0.0),
+            false,
+            Some(Vec2::new(1.0, 0.0)),
+        ),
+        input(
+            player_id,
+            2,
+            50,
+            Vec2::new(1.0, 0.0),
+            false,
+            Some(Vec2::new(2.0, 0.0)),
+        ),
+        input(
+            player_id,
+            3,
+            5_000,
+            Vec2::new(1.0, 0.0),
+            false,
+            Some(Vec2::new(3.0, 0.0)),
         ),
     ]
 }

@@ -4,3 +4,4 @@ max_speed_units_per_second = 10.0
 movement_tolerance_units = 0.15
 fixed_tick_ms = 100
 fire_cooldown_ms = 500
+max_client_time_step_ms = 250
