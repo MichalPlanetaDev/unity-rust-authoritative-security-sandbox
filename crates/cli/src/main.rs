@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, io};
 
-use protocol::{SuspicionKind, TelemetryEvent};
+use protocol::{ConnectionId, InputCommand, Milliseconds, PlayerId, SuspicionKind, TelemetryEvent};
 use telemetry::read_events;
 
 fn main() {
@@ -30,6 +30,14 @@ fn run() -> io::Result<()> {
 
             print_risk(path)
         }
+        Some("timeline") => {
+            let Some(path) = args.get(1) else {
+                eprintln!("missing telemetry path");
+                std::process::exit(2);
+            };
+
+            print_timeline(path)
+        }
         Some("help") | Some("--help") | Some("-h") | None => {
             print_help();
             Ok(())
@@ -46,6 +54,7 @@ fn print_help() {
     println!("Usage:");
     println!("  cargo run -p cli -- summary samples/session.jsonl");
     println!("  cargo run -p cli -- risk samples/session.jsonl");
+    println!("  cargo run -p cli -- timeline samples/session.jsonl");
 }
 
 fn print_summary(path: &str) -> io::Result<()> {
@@ -66,7 +75,7 @@ fn print_summary(path: &str) -> io::Result<()> {
             TelemetryEvent::ClientDisconnected { .. } => {
                 disconnected += 1;
             }
-            TelemetryEvent::CommandAccepted(_) => {
+            TelemetryEvent::CommandAccepted { .. } => {
                 accepted += 1;
             }
             TelemetryEvent::PlayerSnapshot(_) => {
@@ -153,6 +162,137 @@ fn print_risk(path: &str) -> io::Result<()> {
     }
 
     Ok(())
+}
+
+fn print_timeline(path: &str) -> io::Result<()> {
+    let events = read_events(path)?;
+
+    println!("Session timeline");
+    println!();
+    println!("File: {path}");
+    println!("Events: {}", events.len());
+    println!();
+
+    if events.is_empty() {
+        println!("No telemetry events found.");
+        return Ok(());
+    }
+
+    for event in events {
+        let row = TimelineRow::from_event(event);
+        row.print();
+    }
+
+    Ok(())
+}
+
+#[derive(Debug)]
+struct TimelineRow {
+    server_time_ms: Milliseconds,
+    connection_id: Option<ConnectionId>,
+    player_id: Option<PlayerId>,
+    event_name: &'static str,
+    detail: String,
+}
+
+impl TimelineRow {
+    fn from_event(event: TelemetryEvent) -> Self {
+        match event {
+            TelemetryEvent::ClientConnected {
+                connection_id,
+                player_id,
+                server_time_ms,
+            } => Self {
+                server_time_ms,
+                connection_id: Some(connection_id),
+                player_id: Some(player_id),
+                event_name: "ClientConnected",
+                detail: "joined".to_string(),
+            },
+            TelemetryEvent::ClientDisconnected {
+                connection_id,
+                player_id,
+                server_time_ms,
+            } => Self {
+                server_time_ms,
+                connection_id: Some(connection_id),
+                player_id,
+                event_name: "ClientDisconnected",
+                detail: "disconnected".to_string(),
+            },
+            TelemetryEvent::CommandAccepted {
+                command,
+                server_time_ms,
+            } => Self {
+                server_time_ms,
+                connection_id: None,
+                player_id: Some(command.player_id),
+                event_name: "CommandAccepted",
+                detail: command_detail(&command),
+            },
+            TelemetryEvent::PlayerSnapshot(snapshot) => Self {
+                server_time_ms: snapshot.server_time_ms,
+                connection_id: None,
+                player_id: Some(snapshot.player_id),
+                event_name: "PlayerSnapshot",
+                detail: format!(
+                    "pos=({:.2}, {:.2}) health={} alive={}",
+                    snapshot.position.x, snapshot.position.y, snapshot.health, snapshot.alive
+                ),
+            },
+            TelemetryEvent::Suspicion(report) => Self {
+                server_time_ms: report.server_time_ms,
+                connection_id: None,
+                player_id: Some(report.player_id),
+                event_name: "Suspicion",
+                detail: format!(
+                    "kind={:?} seq={} observed={:.3} limit={:.3} reason={}",
+                    report.kind,
+                    report.sequence,
+                    report.observed_value,
+                    report.expected_limit,
+                    report.reason
+                ),
+            },
+        }
+    }
+
+    fn print(&self) {
+        println!(
+            "[{:08}ms] conn={} player={} {} {}",
+            self.server_time_ms,
+            format_connection_id(self.connection_id),
+            format_player_id(self.player_id),
+            self.event_name,
+            self.detail
+        );
+    }
+}
+
+fn command_detail(command: &InputCommand) -> String {
+    let claimed_position = match command.claimed_position {
+        Some(position) => format!("claimed=({:.2}, {:.2})", position.x, position.y),
+        None => "claimed=none".to_string(),
+    };
+
+    format!(
+        "seq={} fire={} movement=({:.2}, {:.2}) {}",
+        command.sequence, command.fire, command.movement.x, command.movement.y, claimed_position
+    )
+}
+
+fn format_connection_id(connection_id: Option<ConnectionId>) -> String {
+    match connection_id {
+        Some(connection_id) => connection_id.to_string(),
+        None => "-".to_string(),
+    }
+}
+
+fn format_player_id(player_id: Option<PlayerId>) -> String {
+    match player_id {
+        Some(player_id) => format!("{player_id:?}"),
+        None => "-".to_string(),
+    }
 }
 
 fn risk_weight(kind: &SuspicionKind) -> u32 {

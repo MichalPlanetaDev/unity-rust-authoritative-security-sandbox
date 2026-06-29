@@ -24,6 +24,7 @@ Planned full pipeline:
 - Docker Compose networking demo
 - Rust CI and Docker CI
 - Connection lifecycle telemetry
+- Server-side session replay timeline
 
 ## Architecture
 
@@ -48,6 +49,10 @@ Terminal 2:
     cargo run -p bot -- sequence
     cargo run -p cli -- summary samples/session.jsonl
     cargo run -p cli -- risk samples/session.jsonl
+
+Replay ordered telemetry timeline:
+
+    cargo run -p cli -- timeline samples/session.jsonl
 
 ## Docker run
 

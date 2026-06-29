@@ -25,10 +25,10 @@ impl Vec2 {
     }
 
     pub fn distance(self, other: Self) -> f32 {
-        (Self {
+        Self {
             x: self.x - other.x,
             y: self.y - other.y,
-        })
+        }
         .length()
     }
 
@@ -157,7 +157,10 @@ pub enum TelemetryEvent {
         player_id: Option<PlayerId>,
         server_time_ms: Milliseconds,
     },
-    CommandAccepted(InputCommand),
+    CommandAccepted {
+        command: InputCommand,
+        server_time_ms: Milliseconds,
+    },
     PlayerSnapshot(PlayerSnapshot),
     Suspicion(SuspicionReport),
 }
@@ -244,7 +247,7 @@ mod tests {
         assert_eq!(
             message,
             ClientMessage::Join {
-                player_id: PlayerId(1),
+                player_id: PlayerId(1)
             }
         );
     }
@@ -262,5 +265,26 @@ mod tests {
         assert!(json.contains("\"type\":\"ClientConnected\""));
         assert!(json.contains("\"connection_id\":99"));
         assert!(json.contains("\"player_id\":7"));
+    }
+
+    #[test]
+    fn serializes_command_accepted_with_server_time() {
+        let event = TelemetryEvent::CommandAccepted {
+            command: InputCommand {
+                player_id: PlayerId(3),
+                sequence: 8,
+                client_time_ms: 700,
+                movement: Vec2::new(1.0, 0.0),
+                fire: false,
+                claimed_position: Some(Vec2::new(4.0, 0.0)),
+            },
+            server_time_ms: 900,
+        };
+
+        let json = serde_json::to_string(&event).expect("event should serialize");
+
+        assert!(json.contains("\"type\":\"CommandAccepted\""));
+        assert!(json.contains("\"server_time_ms\":900"));
+        assert!(json.contains("\"sequence\":8"));
     }
 }

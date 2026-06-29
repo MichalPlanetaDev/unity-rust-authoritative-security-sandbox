@@ -202,13 +202,11 @@ fn handle_client(mut stream: TcpStream, shared: Arc<SharedServer>) -> io::Result
 
     let disconnected_at = shared.server_time_ms();
 
-    shared.write_event(
-        &(TelemetryEvent::ClientDisconnected {
-            connection_id,
-            player_id: joined_player_id,
-            server_time_ms: disconnected_at,
-        }),
-    );
+    shared.write_event(&TelemetryEvent::ClientDisconnected {
+        connection_id,
+        player_id: joined_player_id,
+        server_time_ms: disconnected_at,
+    });
 
     println!("client disconnected: {peer_addr} connection_id={connection_id}");
 
@@ -232,13 +230,12 @@ fn process_message(
                     .or_insert_with(PlayerState::new);
             }
 
-            shared.write_event(
-                &(TelemetryEvent::ClientConnected {
-                    connection_id,
-                    player_id,
-                    server_time_ms,
-                }),
-            );
+            shared.write_event(&TelemetryEvent::ClientConnected {
+                connection_id,
+                player_id,
+                server_time_ms,
+            });
+
             ServerMessage::Welcome { player_id }
         }
         ClientMessage::Input(command) => process_input(command, server_time_ms, shared),
@@ -304,7 +301,7 @@ fn process_input(
         } else {
             if let Some(claimed_position) = command.claimed_position {
                 let observed_distance = state.position.distance(claimed_position);
-                let allowed_distance = max_speed * ((fixed_tick_ms as f32) / 1000.0) + tolerance;
+                let allowed_distance = max_speed * (fixed_tick_ms as f32 / 1000.0) + tolerance;
 
                 if observed_distance > allowed_distance {
                     let report = SuspicionReport::new(
@@ -339,7 +336,7 @@ fn process_input(
                 }
             }
 
-            let movement_budget = max_speed * ((fixed_tick_ms as f32) / 1000.0);
+            let movement_budget = max_speed * (fixed_tick_ms as f32 / 1000.0);
             let movement_delta = command.movement.normalized().scaled(movement_budget);
 
             state.position = state.position.add_vector(movement_delta);
@@ -347,7 +344,10 @@ fn process_input(
 
             let snapshot = state.snapshot(command.player_id, server_time_ms);
 
-            events.push(TelemetryEvent::CommandAccepted(command));
+            events.push(TelemetryEvent::CommandAccepted {
+                command,
+                server_time_ms,
+            });
             events.push(TelemetryEvent::PlayerSnapshot(snapshot.clone()));
 
             ServerMessage::Snapshot(snapshot)

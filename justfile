@@ -27,6 +27,9 @@ summary:
 risk:
     cargo run -p cli -- risk samples/session.jsonl
 
+timeline:
+    cargo run -p cli -- timeline samples/session.jsonl
+
 docker-build:
     docker build -t unity-rust-authoritative-security-sandbox .
 
