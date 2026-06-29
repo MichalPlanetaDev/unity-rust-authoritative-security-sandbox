@@ -18,7 +18,7 @@ namespace SecuritySandbox.Networking
         private Thread readerThread;
         private volatile bool running;
 
-        private readonly ConcurrentQueue<string> incomingLines = new();
+        private readonly ConcurrentQueue<string> incomingLines = new ConcurrentQueue<string>();
 
         public bool IsConnected => client != null && client.Connected;
 
@@ -125,7 +125,11 @@ namespace SecuritySandbox.Networking
                 }
                 catch (Exception exception)
                 {
-                    incomingLines.Enqueue("{\"type\":\"Rejected\",\"data\":{\"reason\":\"reader error: " + Escape(exception.Message) + "\"}}");
+                    incomingLines.Enqueue(
+                        "{\"type\":\"Rejected\",\"data\":{\"reason\":\"reader error: "
+                        + Escape(exception.Message)
+                        + "\"}}"
+                    );
                     break;
                 }
             }

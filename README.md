@@ -66,6 +66,18 @@ See:
 
     docs/unity-client.md
 
+## Unity scene
+
+The repository includes a playable Unity client scene under:
+
+    unity-client/Assets/Scenes/Main.unity
+
+The scene connects to the Rust TCP server, sends movement/fire input, receives authoritative snapshots, and can generate controlled suspicious inputs for telemetry testing.
+
+See:
+
+    docs/unity-scene.md
+
 ## Config
 
 Local server config:
