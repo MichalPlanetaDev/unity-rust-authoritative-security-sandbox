@@ -3,7 +3,10 @@ use std::{
     io::{self, BufRead, BufReader, Write},
     net::{TcpListener, TcpStream},
     path::Path,
-    sync::{Arc, Mutex},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicU64, Ordering},
+    },
     time::Instant,
 };
 
@@ -86,11 +89,16 @@ impl GameWorld {
 
 struct SharedServer {
     started_at: Instant,
+    next_connection_id: AtomicU64,
     world: Arc<Mutex<GameWorld>>,
     telemetry: Arc<Mutex<TelemetryWriter>>,
 }
 
 impl SharedServer {
+    fn allocate_connection_id(&self) -> u64 {
+        self.next_connection_id.fetch_add(1, Ordering::Relaxed)
+    }
+
     fn server_time_ms(&self) -> Milliseconds {
         self.started_at.elapsed().as_millis() as Milliseconds
     }
@@ -132,6 +140,7 @@ fn run() -> io::Result<()> {
 
     let shared = Arc::new(SharedServer {
         started_at: Instant::now(),
+        next_connection_id: AtomicU64::new(1),
         world: Arc::new(Mutex::new(GameWorld::new(config))),
         telemetry: Arc::new(Mutex::new(telemetry)),
     });
@@ -158,7 +167,10 @@ fn run() -> io::Result<()> {
 
 fn handle_client(mut stream: TcpStream, shared: Arc<SharedServer>) -> io::Result<()> {
     let peer_addr = stream.peer_addr()?;
-    println!("client connected: {peer_addr}");
+    let connection_id = shared.allocate_connection_id();
+    let mut joined_player_id = None;
+
+    println!("client connected: {peer_addr} connection_id={connection_id}");
 
     let reader_stream = stream.try_clone()?;
     let reader = BufReader::new(reader_stream);
@@ -170,8 +182,14 @@ fn handle_client(mut stream: TcpStream, shared: Arc<SharedServer>) -> io::Result
             continue;
         }
 
-        let response = match serde_json::from_str::<ClientMessage>(&line) {
-            Ok(message) => process_message(message, &shared),
+        let parsed_message = serde_json::from_str::<ClientMessage>(&line);
+
+        if let Ok(ClientMessage::Join { player_id }) = &parsed_message {
+            joined_player_id = Some(*player_id);
+        }
+
+        let response = match parsed_message {
+            Ok(message) => process_message(message, connection_id, &shared),
             Err(error) => ServerMessage::Rejected {
                 reason: format!("invalid client message: {error}"),
             },
@@ -182,12 +200,26 @@ fn handle_client(mut stream: TcpStream, shared: Arc<SharedServer>) -> io::Result
         stream.flush()?;
     }
 
-    println!("client disconnected: {peer_addr}");
+    let disconnected_at = shared.server_time_ms();
+
+    shared.write_event(
+        &(TelemetryEvent::ClientDisconnected {
+            connection_id,
+            player_id: joined_player_id,
+            server_time_ms: disconnected_at,
+        }),
+    );
+
+    println!("client disconnected: {peer_addr} connection_id={connection_id}");
 
     Ok(())
 }
 
-fn process_message(message: ClientMessage, shared: &SharedServer) -> ServerMessage {
+fn process_message(
+    message: ClientMessage,
+    connection_id: u64,
+    shared: &SharedServer,
+) -> ServerMessage {
     let server_time_ms = shared.server_time_ms();
 
     match message {
@@ -200,11 +232,13 @@ fn process_message(message: ClientMessage, shared: &SharedServer) -> ServerMessa
                     .or_insert_with(PlayerState::new);
             }
 
-            shared.write_event(&TelemetryEvent::ClientConnected {
-                player_id,
-                server_time_ms,
-            });
-
+            shared.write_event(
+                &(TelemetryEvent::ClientConnected {
+                    connection_id,
+                    player_id,
+                    server_time_ms,
+                }),
+            );
             ServerMessage::Welcome { player_id }
         }
         ClientMessage::Input(command) => process_input(command, server_time_ms, shared),
@@ -270,7 +304,7 @@ fn process_input(
         } else {
             if let Some(claimed_position) = command.claimed_position {
                 let observed_distance = state.position.distance(claimed_position);
-                let allowed_distance = max_speed * (fixed_tick_ms as f32 / 1000.0) + tolerance;
+                let allowed_distance = max_speed * ((fixed_tick_ms as f32) / 1000.0) + tolerance;
 
                 if observed_distance > allowed_distance {
                     let report = SuspicionReport::new(
@@ -305,7 +339,7 @@ fn process_input(
                 }
             }
 
-            let movement_budget = max_speed * (fixed_tick_ms as f32 / 1000.0);
+            let movement_budget = max_speed * ((fixed_tick_ms as f32) / 1000.0);
             let movement_delta = command.movement.normalized().scaled(movement_budget);
 
             state.position = state.position.add_vector(movement_delta);

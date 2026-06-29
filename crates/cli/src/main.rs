@@ -52,6 +52,7 @@ fn print_summary(path: &str) -> io::Result<()> {
     let events = read_events(path)?;
 
     let mut connected = 0;
+    let mut disconnected = 0;
     let mut accepted = 0;
     let mut snapshots = 0;
     let mut suspicions = 0;
@@ -59,9 +60,18 @@ fn print_summary(path: &str) -> io::Result<()> {
 
     for event in &events {
         match event {
-            TelemetryEvent::ClientConnected { .. } => connected += 1,
-            TelemetryEvent::CommandAccepted(_) => accepted += 1,
-            TelemetryEvent::PlayerSnapshot(_) => snapshots += 1,
+            TelemetryEvent::ClientConnected { .. } => {
+                connected += 1;
+            }
+            TelemetryEvent::ClientDisconnected { .. } => {
+                disconnected += 1;
+            }
+            TelemetryEvent::CommandAccepted(_) => {
+                accepted += 1;
+            }
+            TelemetryEvent::PlayerSnapshot(_) => {
+                snapshots += 1;
+            }
             TelemetryEvent::Suspicion(report) => {
                 suspicions += 1;
                 *by_kind.entry(format!("{:?}", report.kind)).or_insert(0) += 1;
@@ -74,6 +84,7 @@ fn print_summary(path: &str) -> io::Result<()> {
     println!("File: {path}");
     println!("Total events: {}", events.len());
     println!("Client connections: {connected}");
+    println!("Client disconnections: {disconnected}");
     println!("Accepted commands: {accepted}");
     println!("Snapshots: {snapshots}");
     println!("Suspicion reports: {suspicions}");

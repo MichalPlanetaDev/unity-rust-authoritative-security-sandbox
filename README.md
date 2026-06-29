@@ -23,6 +23,7 @@ Planned full pipeline:
 - CLI player risk scoring
 - Docker Compose networking demo
 - Rust CI and Docker CI
+- Connection lifecycle telemetry
 
 ## Architecture
 
@@ -31,6 +32,8 @@ Planned full pipeline:
             -> server
                 -> JSONL telemetry
                     -> cli summary / cli risk
+
+Telemetry includes client connection, disconnection, accepted commands, snapshots, and suspicion reports.
 
 ## Local run
 

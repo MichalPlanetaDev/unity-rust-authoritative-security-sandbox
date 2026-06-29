@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 pub type SequenceNumber = u64;
 pub type Milliseconds = u64;
+pub type ConnectionId = u64;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct PlayerId(pub u64);
@@ -24,10 +25,10 @@ impl Vec2 {
     }
 
     pub fn distance(self, other: Self) -> f32 {
-        Self {
+        (Self {
             x: self.x - other.x,
             y: self.y - other.y,
-        }
+        })
         .length()
     }
 
@@ -147,7 +148,13 @@ impl SuspicionReport {
 #[serde(tag = "type", content = "data")]
 pub enum TelemetryEvent {
     ClientConnected {
+        connection_id: ConnectionId,
         player_id: PlayerId,
+        server_time_ms: Milliseconds,
+    },
+    ClientDisconnected {
+        connection_id: ConnectionId,
+        player_id: Option<PlayerId>,
         server_time_ms: Milliseconds,
     },
     CommandAccepted(InputCommand),
@@ -237,8 +244,23 @@ mod tests {
         assert_eq!(
             message,
             ClientMessage::Join {
-                player_id: PlayerId(1)
+                player_id: PlayerId(1),
             }
         );
+    }
+
+    #[test]
+    fn serializes_connection_telemetry_with_type_field() {
+        let event = TelemetryEvent::ClientConnected {
+            connection_id: 99,
+            player_id: PlayerId(7),
+            server_time_ms: 1234,
+        };
+
+        let json = serde_json::to_string(&event).expect("event should serialize");
+
+        assert!(json.contains("\"type\":\"ClientConnected\""));
+        assert!(json.contains("\"connection_id\":99"));
+        assert!(json.contains("\"player_id\":7"));
     }
 }
