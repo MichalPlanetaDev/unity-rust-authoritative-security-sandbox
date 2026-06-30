@@ -1,7 +1,6 @@
 use std::{
     collections::HashMap,
-    io::{self, BufRead, BufReader, Write},
-    net::{TcpListener, TcpStream},
+    io,
     path::Path,
     sync::{
         Arc, Mutex,
@@ -15,6 +14,13 @@ use protocol::{
     SuspicionKind, TelemetryEvent, Vec2,
 };
 use telemetry::TelemetryWriter;
+use tokio::{
+    io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
+    net::{TcpListener, TcpStream, tcp::OwnedWriteHalf},
+    sync::broadcast,
+};
+use tracing::{debug, error, info, warn};
+use tracing_subscriber::EnvFilter;
 use validation::{PlayerValidationState, ValidationPolicy, validate_input};
 
 const DEFAULT_CONFIG_PATH: &str = "config/default.toml";
@@ -114,11 +120,20 @@ impl GameWorld {
 struct SharedServer {
     started_at: Instant,
     next_connection_id: AtomicU64,
-    world: Arc<Mutex<GameWorld>>,
-    telemetry: Arc<Mutex<TelemetryWriter>>,
+    world: Mutex<GameWorld>,
+    telemetry: Mutex<TelemetryWriter>,
 }
 
 impl SharedServer {
+    fn new(config: ServerConfig, telemetry: TelemetryWriter) -> Self {
+        Self {
+            started_at: Instant::now(),
+            next_connection_id: AtomicU64::new(1),
+            world: Mutex::new(GameWorld::new(config)),
+            telemetry: Mutex::new(telemetry),
+        }
+    }
+
     fn allocate_connection_id(&self) -> u64 {
         self.next_connection_id.fetch_add(1, Ordering::Relaxed)
     }
@@ -135,93 +150,145 @@ impl SharedServer {
             .write_event(event);
 
         if let Err(error) = result {
-            eprintln!("failed to write telemetry: {error}");
+            error!(%error, "failed to write telemetry");
         }
     }
 }
 
-fn main() {
-    if let Err(error) = run() {
-        eprintln!("server failed: {error}");
+#[tokio::main]
+async fn main() {
+    init_logging();
+
+    if let Err(error) = run().await {
+        error!(%error, "server failed");
         std::process::exit(1);
     }
 }
 
-fn run() -> io::Result<()> {
+fn init_logging() {
+    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
+
+    tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_target(false)
+        .compact()
+        .init();
+}
+
+async fn run() -> io::Result<()> {
     let config_path = std::env::args()
         .nth(1)
         .unwrap_or_else(|| DEFAULT_CONFIG_PATH.to_string());
 
     let config = ServerConfig::load(&config_path)?;
     let telemetry = TelemetryWriter::create(&config.telemetry_path)?;
-    let listener = TcpListener::bind(&config.bind_addr)?;
+    let listener = TcpListener::bind(&config.bind_addr).await?;
 
-    println!("unity-rust-authoritative-security-sandbox server");
-    println!("Loaded config: {config_path}");
-    println!("Listening on: {}", config.bind_addr);
-    println!("Telemetry: {}", config.telemetry_path);
-    println!();
+    info!("unity-rust-authoritative-security-sandbox server");
+    info!(config_path = %config_path, "loaded config");
+    info!(bind_addr = %config.bind_addr, "listening");
+    info!(telemetry_path = %config.telemetry_path, "telemetry configured");
 
-    let shared = Arc::new(SharedServer {
-        started_at: Instant::now(),
-        next_connection_id: AtomicU64::new(1),
-        world: Arc::new(Mutex::new(GameWorld::new(config))),
-        telemetry: Arc::new(Mutex::new(telemetry)),
-    });
+    let shared = Arc::new(SharedServer::new(config, telemetry));
+    let (shutdown_tx, _) = broadcast::channel::<()>(1);
 
-    for stream in listener.incoming() {
-        match stream {
-            Ok(stream) => {
-                let shared = Arc::clone(&shared);
+    let accept_loop = accept_connections(listener, Arc::clone(&shared), shutdown_tx.subscribe());
 
-                std::thread::spawn(move || {
-                    if let Err(error) = handle_client(stream, shared) {
-                        eprintln!("client handler failed: {error}");
-                    }
-                });
-            }
-            Err(error) => {
-                eprintln!("failed to accept client: {error}");
-            }
+    tokio::select! {
+        result = accept_loop => {
+            result?;
+        }
+        signal_result = tokio::signal::ctrl_c() => {
+            signal_result?;
+            info!("shutdown signal received");
         }
     }
 
+    let _ = shutdown_tx.send(());
+
+    info!("server shutdown complete");
     Ok(())
 }
 
-fn handle_client(mut stream: TcpStream, shared: Arc<SharedServer>) -> io::Result<()> {
+async fn accept_connections(
+    listener: TcpListener,
+    shared: Arc<SharedServer>,
+    mut shutdown_rx: broadcast::Receiver<()>,
+) -> io::Result<()> {
+    loop {
+        tokio::select! {
+            accept_result = listener.accept() => {
+                let (stream, peer_addr) = accept_result?;
+                let shared = Arc::clone(&shared);
+                let connection_id = shared.allocate_connection_id();
+                let client_shutdown_rx = shutdown_rx.resubscribe();
+
+                info!(%peer_addr, connection_id, "client accepted");
+
+                tokio::spawn(async move {
+                    if let Err(error) = handle_client(stream, connection_id, shared, client_shutdown_rx).await {
+                        warn!(%peer_addr, connection_id, %error, "client handler exited with error");
+                    }
+                });
+            }
+            _ = shutdown_rx.recv() => {
+                info!("accept loop received shutdown");
+                return Ok(());
+            }
+        }
+    }
+}
+
+async fn handle_client(
+    stream: TcpStream,
+    connection_id: u64,
+    shared: Arc<SharedServer>,
+    mut shutdown_rx: broadcast::Receiver<()>,
+) -> io::Result<()> {
     let peer_addr = stream.peer_addr()?;
-    let connection_id = shared.allocate_connection_id();
     let mut joined_player_id = None;
 
-    println!("client connected: {peer_addr} connection_id={connection_id}");
+    info!(%peer_addr, connection_id, "client connected");
 
-    let reader_stream = stream.try_clone()?;
-    let reader = BufReader::new(reader_stream);
+    let (read_half, mut write_half) = stream.into_split();
+    let mut lines = BufReader::new(read_half).lines();
 
-    for line in reader.lines() {
-        let line = line?;
+    loop {
+        tokio::select! {
+            line_result = lines.next_line() => {
+                let Some(line) = line_result? else {
+                    break;
+                };
 
-        if line.trim().is_empty() {
-            continue;
+                if line.trim().is_empty() {
+                    continue;
+                }
+
+                debug!(connection_id, line = %line, "client message received");
+
+                let parsed_message = serde_json::from_str::<ClientMessage>(&line);
+
+                if let Ok(ClientMessage::Join { player_id }) = &parsed_message {
+                    joined_player_id = Some(*player_id);
+                }
+
+                let response = match parsed_message {
+                    Ok(message) => process_message(message, connection_id, &shared),
+                    Err(error) => {
+                        warn!(connection_id, %error, "invalid client message");
+                        ServerMessage::Rejected {
+                            reason: format!("invalid client message: {error}"),
+                        }
+                    }
+                };
+
+                write_response(&mut write_half, &response).await?;
+            }
+            _ = shutdown_rx.recv() => {
+                info!(connection_id, "client task received shutdown");
+                break;
+            }
         }
-
-        let parsed_message = serde_json::from_str::<ClientMessage>(&line);
-
-        if let Ok(ClientMessage::Join { player_id }) = &parsed_message {
-            joined_player_id = Some(*player_id);
-        }
-
-        let response = match parsed_message {
-            Ok(message) => process_message(message, connection_id, &shared),
-            Err(error) => ServerMessage::Rejected {
-                reason: format!("invalid client message: {error}"),
-            },
-        };
-
-        serde_json::to_writer(&mut stream, &response).map_err(to_invalid_data)?;
-        stream.write_all(b"\n")?;
-        stream.flush()?;
     }
 
     let disconnected_at = shared.server_time_ms();
@@ -232,9 +299,22 @@ fn handle_client(mut stream: TcpStream, shared: Arc<SharedServer>) -> io::Result
         server_time_ms: disconnected_at,
     });
 
-    println!("client disconnected: {peer_addr} connection_id={connection_id}");
+    info!(
+        %peer_addr,
+        connection_id,
+        player_id = ?joined_player_id,
+        "client disconnected"
+    );
 
     Ok(())
+}
+
+async fn write_response(writer: &mut OwnedWriteHalf, response: &ServerMessage) -> io::Result<()> {
+    let json = serde_json::to_string(response).map_err(to_invalid_data)?;
+
+    writer.write_all(json.as_bytes()).await?;
+    writer.write_all(b"\n").await?;
+    writer.flush().await
 }
 
 fn process_message(
@@ -259,6 +339,8 @@ fn process_message(
                 player_id,
                 server_time_ms,
             });
+
+            info!(connection_id, player_id = ?player_id, "player joined");
 
             ServerMessage::Welcome { player_id }
         }
@@ -293,13 +375,29 @@ fn process_input(
         let has_fire_rate_violation = decision.has_kind(SuspicionKind::FireRateViolation);
 
         for report in decision.reports {
+            warn!(
+                player_id = ?report.player_id,
+                sequence = report.sequence,
+                kind = ?report.kind,
+                observed_value = report.observed_value,
+                expected_limit = report.expected_limit,
+                "suspicion detected"
+            );
+
             events.push(TelemetryEvent::Suspicion(report));
         }
 
         if !accepted {
-            ServerMessage::Rejected {
-                reason: rejection_reason.unwrap_or_else(|| "input rejected".to_string()),
-            }
+            let reason = rejection_reason.unwrap_or_else(|| "input rejected".to_string());
+
+            warn!(
+                player_id = ?command.player_id,
+                sequence = command.sequence,
+                reason = %reason,
+                "input rejected"
+            );
+
+            ServerMessage::Rejected { reason }
         } else {
             if command.fire && !has_fire_rate_violation {
                 state.next_allowed_fire_time_ms = server_time_ms + policy.fire_cooldown_ms;

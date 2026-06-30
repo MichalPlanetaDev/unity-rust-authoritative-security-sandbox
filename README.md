@@ -29,6 +29,9 @@ Planned full pipeline:
 - Timing violation bot scenario
 - Dedicated validation engine crate
 - Evidence model with JSON/CSV export
+- Async Tokio TCP server
+- Structured tracing logs
+- Graceful shutdown handling
 
 ## Architecture
 
@@ -69,6 +72,14 @@ Evidence inspection:
 Evidence export:
 
     cargo run -p cli -- export-evidence samples/session.jsonl reports/evidence.json reports/evidence.csv
+
+Structured logging:
+
+    RUST_LOG=debug cargo run -p server
+
+Graceful shutdown:
+
+    Press Ctrl+C while the server is running.
 
 ## Docker run
 

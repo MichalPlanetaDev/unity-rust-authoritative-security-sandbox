@@ -7,7 +7,7 @@
     "reason": "claimed position exceeded server movement budget",
     "observed_value": 24.0,
     "expected_limit": 1.15,
-    "server_time_ms": 2668
+    "server_time_ms": 2707
   },
   {
     "player_id": 2,
@@ -15,9 +15,9 @@
     "violation_code": "FireRateViolation",
     "severity": "Medium",
     "reason": "fire input arrived before cooldown expired",
-    "observed_value": 2957.0,
-    "expected_limit": 3312.0,
-    "server_time_ms": 2957
+    "observed_value": 2995.0,
+    "expected_limit": 3351.0,
+    "server_time_ms": 2995
   },
   {
     "player_id": 3,
@@ -27,7 +27,7 @@
     "reason": "command sequence number did not increase",
     "observed_value": 1.0,
     "expected_limit": 2.0,
-    "server_time_ms": 4176
+    "server_time_ms": 4219
   },
   {
     "player_id": 4,
@@ -37,7 +37,7 @@
     "reason": "client timestamp did not increase",
     "observed_value": 50.0,
     "expected_limit": 101.0,
-    "server_time_ms": 5404
+    "server_time_ms": 5415
   },
   {
     "player_id": 4,
@@ -47,6 +47,6 @@
     "reason": "client timestamp jumped too far forward",
     "observed_value": 4950.0,
     "expected_limit": 250.0,
-    "server_time_ms": 5548
+    "server_time_ms": 5559
   }
 ]
