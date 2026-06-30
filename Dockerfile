@@ -14,5 +14,4 @@ WORKDIR /workspace
 COPY --from=builder /app/target/release/server /usr/local/bin/server
 COPY --from=builder /app/target/release/bot /usr/local/bin/bot
 COPY --from=builder /app/target/release/cli /usr/local/bin/cli
-
-CMD ["cli", "help"]
+COPY --from=builder /app/target/release/investigation-api /usr/local/bin/investigation-api

@@ -113,3 +113,15 @@ docker-query-db-breakdown:
 
 docker-query-db-player-timeline:
     HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm query-db-player-timeline
+
+api:
+    cargo run -p investigation-api -- serve reports/investigation.db 127.0.0.1:8080
+
+api-smoke:
+    cargo run -p investigation-api -- smoke 127.0.0.1:8080
+
+docker-api:
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose up -d investigation-api
+
+docker-api-smoke:
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm investigation-api-smoke

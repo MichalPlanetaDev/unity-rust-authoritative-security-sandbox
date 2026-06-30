@@ -1,0 +1,13 @@
+[package]
+name = "investigation-api"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+investigation = { path = "../investigation" }
+protocol = { path = "../protocol" }
+axum = "0.7"
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "signal"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }

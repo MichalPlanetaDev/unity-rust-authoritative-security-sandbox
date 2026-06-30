@@ -38,6 +38,9 @@ docker compose run --rm query-db-suspicious
 docker compose run --rm query-db-breakdown
 docker compose run --rm query-db-player-timeline
 
+docker compose up -d investigation-api
+docker compose run --rm investigation-api-smoke
+
 test -f samples/session.jsonl
 test -f reports/evidence.json
 test -f reports/evidence.csv

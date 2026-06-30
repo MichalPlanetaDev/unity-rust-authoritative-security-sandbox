@@ -39,6 +39,8 @@ Planned full pipeline:
 - SQLite investigation database
 - Queryable suspicious player reports
 - Queryable violation breakdown and player timeline
+- Read-only investigation API
+- API smoke test for Docker workflow
 
 ## Architecture
 
@@ -99,6 +101,11 @@ Investigation database:
     cargo run -p cli -- query-db suspicious-players reports/investigation.db
     cargo run -p cli -- query-db violation-breakdown reports/investigation.db
     cargo run -p cli -- query-db player-timeline reports/investigation.db 2
+
+Investigation API:
+
+    cargo run -p investigation-api -- serve reports/investigation.db 127.0.0.1:8080
+    cargo run -p investigation-api -- smoke 127.0.0.1:8080
 
 ## Docker run
 

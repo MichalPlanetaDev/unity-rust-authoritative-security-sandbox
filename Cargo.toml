@@ -5,6 +5,7 @@ members = [
     "crates/protocol",
     "crates/validation",
     "crates/investigation",
+    "crates/investigation-api",
     "crates/telemetry",
     "crates/server",
     "crates/bot",
