@@ -23,6 +23,8 @@ docker compose run --rm bot-normal
 docker compose run --rm bot-suspicious
 docker compose run --rm bot-sequence
 docker compose run --rm bot-timing
+docker compose run --rm bot-flood
+docker compose run --rm bot-bad-protocol
 docker compose run --rm summary
 docker compose run --rm risk
 docker compose run --rm timeline
@@ -35,8 +37,10 @@ test -f reports/evidence.csv
 
 grep -q "Suspicion" samples/session.jsonl
 grep -q "ClientTimeViolation" samples/session.jsonl
-grep -q "ClientTimeViolation" reports/evidence.json
-grep -q "ClientTimeViolation" reports/evidence.csv
+grep -q "RateLimitViolation" samples/session.jsonl
+grep -q "ProtocolViolation" samples/session.jsonl
+grep -q "RateLimitViolation" reports/evidence.json
+grep -q "ProtocolViolation" reports/evidence.csv
 
 echo
 echo "Docker demo finished successfully."

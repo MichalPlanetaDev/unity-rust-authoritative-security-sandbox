@@ -215,6 +215,8 @@ pub enum ViolationCode {
     InvalidStateTransition,
     PacketSequenceViolation,
     ClientTimeViolation,
+    ProtocolViolation,
+    RateLimitViolation,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
@@ -271,6 +273,8 @@ fn violation_code(kind: SuspicionKind) -> ViolationCode {
         SuspicionKind::InvalidStateTransition => ViolationCode::InvalidStateTransition,
         SuspicionKind::PacketSequenceViolation => ViolationCode::PacketSequenceViolation,
         SuspicionKind::ClientTimeViolation => ViolationCode::ClientTimeViolation,
+        SuspicionKind::ProtocolViolation => ViolationCode::ProtocolViolation,
+        SuspicionKind::RateLimitViolation => ViolationCode::RateLimitViolation,
     }
 }
 
@@ -281,6 +285,8 @@ fn severity(code: ViolationCode) -> ViolationSeverity {
         ViolationCode::InvalidStateTransition => ViolationSeverity::High,
         ViolationCode::PacketSequenceViolation => ViolationSeverity::Medium,
         ViolationCode::ClientTimeViolation => ViolationSeverity::Medium,
+        ViolationCode::ProtocolViolation => ViolationSeverity::High,
+        ViolationCode::RateLimitViolation => ViolationSeverity::Medium,
     }
 }
 

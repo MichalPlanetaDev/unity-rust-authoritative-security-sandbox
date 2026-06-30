@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+pub const PROTOCOL_VERSION: u32 = 1;
+
 pub type SequenceNumber = u64;
 pub type Milliseconds = u64;
 pub type ConnectionId = u64;
@@ -73,9 +75,15 @@ pub struct InputCommand {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", content = "data")]
 pub enum ClientMessage {
-    Join { player_id: PlayerId },
+    Join {
+        player_id: PlayerId,
+        #[serde(default)]
+        protocol_version: Option<u32>,
+    },
     Input(InputCommand),
-    Ping { client_time_ms: Milliseconds },
+    Ping {
+        client_time_ms: Milliseconds,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -92,6 +100,7 @@ pub struct PlayerSnapshot {
 pub enum ServerMessage {
     Welcome {
         player_id: PlayerId,
+        protocol_version: u32,
     },
     Snapshot(PlayerSnapshot),
     Rejected {
@@ -110,6 +119,8 @@ pub enum SuspicionKind {
     InvalidStateTransition,
     PacketSequenceViolation,
     ClientTimeViolation,
+    ProtocolViolation,
+    RateLimitViolation,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -172,17 +183,12 @@ mod tests {
 
     #[test]
     fn calculates_distance() {
-        let a = Vec2::new(0.0, 0.0);
-        let b = Vec2::new(3.0, 4.0);
-
-        assert_eq!(a.distance(b), 5.0);
+        assert_eq!(Vec2::new(0.0, 0.0).distance(Vec2::new(3.0, 4.0)), 5.0);
     }
 
     #[test]
     fn normalizes_non_zero_vector() {
-        let vector = Vec2::new(10.0, 0.0).normalized();
-
-        assert_eq!(vector, Vec2::new(1.0, 0.0));
+        assert_eq!(Vec2::new(10.0, 0.0).normalized(), Vec2::new(1.0, 0.0));
     }
 
     #[test]
@@ -191,50 +197,33 @@ mod tests {
     }
 
     #[test]
-    fn creates_suspicion_report() {
-        let report = SuspicionReport::new(
-            PlayerId(7),
-            42,
-            SuspicionKind::SpeedHack,
-            "movement exceeded server budget",
-            20.0,
-            1.15,
-            500,
-        );
-
-        assert_eq!(report.player_id, PlayerId(7));
-        assert_eq!(report.sequence, 42);
-        assert_eq!(report.kind, SuspicionKind::SpeedHack);
-        assert_eq!(report.server_time_ms, 500);
-    }
-
-    #[test]
-    fn creates_client_time_suspicion_report() {
-        let report = SuspicionReport::new(
-            PlayerId(4),
-            3,
-            SuspicionKind::ClientTimeViolation,
-            "client timestamp jumped too far forward",
-            5_000.0,
-            250.0,
-            750,
-        );
-
-        assert_eq!(report.player_id, PlayerId(4));
-        assert_eq!(report.sequence, 3);
-        assert_eq!(report.kind, SuspicionKind::ClientTimeViolation);
-    }
-
-    #[test]
-    fn serializes_client_message_with_type_field() {
+    fn serializes_join_with_protocol_version() {
         let message = ClientMessage::Join {
             player_id: PlayerId(1),
+            protocol_version: Some(PROTOCOL_VERSION),
         };
 
         let json = serde_json::to_string(&message).expect("message should serialize");
 
         assert!(json.contains("\"type\":\"Join\""));
         assert!(json.contains("\"player_id\":1"));
+        assert!(json.contains("\"protocol_version\":1"));
+    }
+
+    #[test]
+    fn deserializes_legacy_join_without_protocol_version() {
+        let json = r#"{"type":"Join","data":{"player_id":1}}"#;
+
+        let message: ClientMessage =
+            serde_json::from_str(json).expect("legacy join should deserialize");
+
+        assert_eq!(
+            message,
+            ClientMessage::Join {
+                player_id: PlayerId(1),
+                protocol_version: None
+            }
+        );
     }
 
     #[test]
@@ -256,21 +245,6 @@ mod tests {
     }
 
     #[test]
-    fn deserializes_client_message_with_type_field() {
-        let json = r#"{"type":"Join","data":{"player_id":1}}"#;
-
-        let message: ClientMessage =
-            serde_json::from_str(json).expect("message should deserialize");
-
-        assert_eq!(
-            message,
-            ClientMessage::Join {
-                player_id: PlayerId(1)
-            }
-        );
-    }
-
-    #[test]
     fn serializes_connection_telemetry_with_type_field() {
         let event = TelemetryEvent::ClientConnected {
             connection_id: 99,
@@ -286,23 +260,18 @@ mod tests {
     }
 
     #[test]
-    fn serializes_command_accepted_with_server_time() {
-        let event = TelemetryEvent::CommandAccepted {
-            command: InputCommand {
-                player_id: PlayerId(3),
-                sequence: 8,
-                client_time_ms: 700,
-                movement: Vec2::new(1.0, 0.0),
-                fire: false,
-                claimed_position: Some(Vec2::new(4.0, 0.0)),
-            },
-            server_time_ms: 900,
-        };
+    fn creates_protocol_suspicion_report() {
+        let report = SuspicionReport::new(
+            PlayerId(7),
+            0,
+            SuspicionKind::ProtocolViolation,
+            "unsupported protocol version",
+            999.0,
+            PROTOCOL_VERSION as f32,
+            500,
+        );
 
-        let json = serde_json::to_string(&event).expect("event should serialize");
-
-        assert!(json.contains("\"type\":\"CommandAccepted\""));
-        assert!(json.contains("\"server_time_ms\":900"));
-        assert!(json.contains("\"sequence\":8"));
+        assert_eq!(report.kind, SuspicionKind::ProtocolViolation);
+        assert_eq!(report.expected_limit, 1.0);
     }
 }

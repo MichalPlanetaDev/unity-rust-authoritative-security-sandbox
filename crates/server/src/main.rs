@@ -10,8 +10,8 @@ use std::{
 };
 
 use protocol::{
-    ClientMessage, InputCommand, Milliseconds, PlayerId, PlayerSnapshot, ServerMessage,
-    SuspicionKind, TelemetryEvent, Vec2,
+    ClientMessage, InputCommand, Milliseconds, PROTOCOL_VERSION, PlayerId, PlayerSnapshot,
+    ServerMessage, SuspicionKind, SuspicionReport, TelemetryEvent, Vec2,
 };
 use telemetry::TelemetryWriter;
 use tokio::{
@@ -34,6 +34,8 @@ struct ServerConfig {
     fixed_tick_ms: Milliseconds,
     fire_cooldown_ms: Milliseconds,
     max_client_time_step_ms: Milliseconds,
+    max_line_bytes: usize,
+    max_messages_per_second: u32,
 }
 
 impl ServerConfig {
@@ -58,6 +60,65 @@ impl ServerConfig {
             max_client_time_step_ms: self.max_client_time_step_ms,
         }
     }
+
+    fn connection_security_limits(&self) -> ConnectionSecurityLimits {
+        ConnectionSecurityLimits {
+            max_line_bytes: self.max_line_bytes,
+            max_messages_per_second: self.max_messages_per_second,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct ConnectionSecurityLimits {
+    max_line_bytes: usize,
+    max_messages_per_second: u32,
+}
+
+#[derive(Debug)]
+struct RateLimiter {
+    max_messages_per_second: u32,
+    window_started_at_ms: Milliseconds,
+    messages_in_window: u32,
+}
+
+impl RateLimiter {
+    fn new(max_messages_per_second: u32) -> Self {
+        Self {
+            max_messages_per_second,
+            window_started_at_ms: 0,
+            messages_in_window: 0,
+        }
+    }
+
+    fn register_message(&mut self, now_ms: Milliseconds) -> bool {
+        if now_ms.saturating_sub(self.window_started_at_ms) >= 1000 {
+            self.window_started_at_ms = now_ms;
+            self.messages_in_window = 0;
+        }
+
+        self.messages_in_window += 1;
+        self.messages_in_window <= self.max_messages_per_second
+    }
+
+    fn observed_count(&self) -> u32 {
+        self.messages_in_window
+    }
+
+    fn limit(&self) -> u32 {
+        self.max_messages_per_second
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct FirewallSuspicion<'a> {
+    player_id: Option<PlayerId>,
+    sequence: u64,
+    kind: SuspicionKind,
+    reason: &'a str,
+    observed_value: f32,
+    expected_limit: f32,
+    server_time_ms: Milliseconds,
 }
 
 #[derive(Debug, Clone)]
@@ -142,6 +203,14 @@ impl SharedServer {
         self.started_at.elapsed().as_millis() as Milliseconds
     }
 
+    fn connection_security_limits(&self) -> ConnectionSecurityLimits {
+        self.world
+            .lock()
+            .expect("world lock poisoned")
+            .config
+            .connection_security_limits()
+    }
+
     fn write_event(&self, event: &TelemetryEvent) {
         let result = self
             .telemetry
@@ -188,6 +257,11 @@ async fn run() -> io::Result<()> {
     info!(config_path = %config_path, "loaded config");
     info!(bind_addr = %config.bind_addr, "listening");
     info!(telemetry_path = %config.telemetry_path, "telemetry configured");
+    info!(
+        max_line_bytes = config.max_line_bytes,
+        max_messages_per_second = config.max_messages_per_second,
+        "protocol firewall configured"
+    );
 
     let shared = Arc::new(SharedServer::new(config, telemetry));
     let (shutdown_tx, _) = broadcast::channel::<()>(1);
@@ -247,6 +321,8 @@ async fn handle_client(
 ) -> io::Result<()> {
     let peer_addr = stream.peer_addr()?;
     let mut joined_player_id = None;
+    let limits = shared.connection_security_limits();
+    let mut rate_limiter = RateLimiter::new(limits.max_messages_per_second);
 
     info!(%peer_addr, connection_id, "client connected");
 
@@ -264,18 +340,84 @@ async fn handle_client(
                     continue;
                 }
 
+                let server_time_ms = shared.server_time_ms();
+
+                if line.len() > limits.max_line_bytes {
+                    record_optional_suspicion(
+                        &shared,
+                        FirewallSuspicion {
+                            player_id: joined_player_id,
+                            sequence: 0,
+                            kind: SuspicionKind::ProtocolViolation,
+                            reason: "client message exceeded maximum line size",
+                            observed_value: line.len() as f32,
+                            expected_limit: limits.max_line_bytes as f32,
+                            server_time_ms,
+                        },
+                    );
+
+                    write_response(
+                        &mut write_half,
+                        &ServerMessage::Rejected {
+                            reason: "client message exceeded maximum line size".to_string(),
+                        },
+                    )
+                    .await?;
+
+                    continue;
+                }
+
+                if !rate_limiter.register_message(server_time_ms) {
+                    record_optional_suspicion(
+                        &shared,
+                        FirewallSuspicion {
+                            player_id: joined_player_id,
+                            sequence: 0,
+                            kind: SuspicionKind::RateLimitViolation,
+                            reason: "connection exceeded message rate limit",
+                            observed_value: rate_limiter.observed_count() as f32,
+                            expected_limit: rate_limiter.limit() as f32,
+                            server_time_ms,
+                        },
+                    );
+
+                    write_response(
+                        &mut write_half,
+                        &ServerMessage::Rejected {
+                            reason: "connection exceeded message rate limit".to_string(),
+                        },
+                    )
+                    .await?;
+
+                    continue;
+                }
+
                 debug!(connection_id, line = %line, "client message received");
 
                 let parsed_message = serde_json::from_str::<ClientMessage>(&line);
 
-                if let Ok(ClientMessage::Join { player_id }) = &parsed_message {
+                if let Ok(ClientMessage::Join { player_id, .. }) = &parsed_message {
                     joined_player_id = Some(*player_id);
                 }
 
                 let response = match parsed_message {
                     Ok(message) => process_message(message, connection_id, &shared),
                     Err(error) => {
+                        record_optional_suspicion(
+                            &shared,
+                            FirewallSuspicion {
+                                player_id: joined_player_id,
+                                sequence: 0,
+                                kind: SuspicionKind::ProtocolViolation,
+                                reason: "invalid JSON protocol message",
+                                observed_value: 1.0,
+                                expected_limit: 0.0,
+                                server_time_ms,
+                            },
+                        );
+
                         warn!(connection_id, %error, "invalid client message");
+
                         ServerMessage::Rejected {
                             reason: format!("invalid client message: {error}"),
                         }
@@ -325,7 +467,41 @@ fn process_message(
     let server_time_ms = shared.server_time_ms();
 
     match message {
-        ClientMessage::Join { player_id } => {
+        ClientMessage::Join {
+            player_id,
+            protocol_version,
+        } => {
+            if let Some(client_protocol_version) = protocol_version
+                && client_protocol_version != PROTOCOL_VERSION
+            {
+                let report = SuspicionReport::new(
+                    player_id,
+                    0,
+                    SuspicionKind::ProtocolViolation,
+                    "unsupported protocol version",
+                    client_protocol_version as f32,
+                    PROTOCOL_VERSION as f32,
+                    server_time_ms,
+                );
+
+                warn!(
+                    connection_id,
+                    player_id = ?player_id,
+                    client_protocol_version,
+                    expected_protocol_version = PROTOCOL_VERSION,
+                    "unsupported protocol version"
+                );
+
+                shared.write_event(&TelemetryEvent::Suspicion(report));
+
+                return ServerMessage::Rejected {
+                    reason: format!(
+                        "unsupported protocol version: expected {}, got {}",
+                        PROTOCOL_VERSION, client_protocol_version
+                    ),
+                };
+            }
+
             {
                 let mut world = shared.world.lock().expect("world lock poisoned");
                 world
@@ -340,9 +516,17 @@ fn process_message(
                 server_time_ms,
             });
 
-            info!(connection_id, player_id = ?player_id, "player joined");
+            info!(
+                connection_id,
+                player_id = ?player_id,
+                protocol_version = protocol_version.unwrap_or(0),
+                "player joined"
+            );
 
-            ServerMessage::Welcome { player_id }
+            ServerMessage::Welcome {
+                player_id,
+                protocol_version: PROTOCOL_VERSION,
+            }
         }
         ClientMessage::Input(command) => process_input(command, server_time_ms, shared),
         ClientMessage::Ping { client_time_ms } => ServerMessage::Pong {
@@ -428,6 +612,31 @@ fn process_input(
     }
 
     response
+}
+
+fn record_optional_suspicion(shared: &SharedServer, suspicion: FirewallSuspicion<'_>) {
+    if let Some(player_id) = suspicion.player_id {
+        let report = SuspicionReport::new(
+            player_id,
+            suspicion.sequence,
+            suspicion.kind,
+            suspicion.reason,
+            suspicion.observed_value,
+            suspicion.expected_limit,
+            suspicion.server_time_ms,
+        );
+
+        shared.write_event(&TelemetryEvent::Suspicion(report));
+    }
+
+    warn!(
+        player_id = ?suspicion.player_id,
+        kind = ?suspicion.kind,
+        observed_value = suspicion.observed_value,
+        expected_limit = suspicion.expected_limit,
+        reason = %suspicion.reason,
+        "protocol firewall event"
+    );
 }
 
 fn to_invalid_data(error: serde_json::Error) -> io::Error {

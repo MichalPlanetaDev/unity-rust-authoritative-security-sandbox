@@ -5,3 +5,5 @@ movement_tolerance_units = 0.15
 fixed_tick_ms = 100
 fire_cooldown_ms = 500
 max_client_time_step_ms = 250
+max_line_bytes = 4096
+max_messages_per_second = 30

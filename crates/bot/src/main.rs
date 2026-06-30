@@ -5,9 +5,15 @@ use std::{
     time::{Duration, Instant},
 };
 
-use protocol::{ClientMessage, InputCommand, PlayerId, Vec2};
+use protocol::{ClientMessage, InputCommand, PROTOCOL_VERSION, PlayerId, Vec2};
 
 const DEFAULT_SERVER_ADDR: &str = "127.0.0.1:4000";
+
+struct Scenario {
+    player_id: PlayerId,
+    commands: Vec<InputCommand>,
+    delay_between_commands: Duration,
+}
 
 fn main() {
     if let Err(error) = run() {
@@ -17,18 +23,36 @@ fn main() {
 }
 
 fn run() -> io::Result<()> {
-    let scenario = std::env::args()
+    let scenario_name = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "normal".to_string());
 
     let server_addr =
         std::env::var("SERVER_ADDR").unwrap_or_else(|_| DEFAULT_SERVER_ADDR.to_string());
 
-    let (player_id, commands) = match scenario.as_str() {
-        "normal" => (PlayerId(1), normal_commands(PlayerId(1))),
-        "suspicious" => (PlayerId(2), suspicious_commands(PlayerId(2))),
-        "sequence" => (PlayerId(3), sequence_violation_commands(PlayerId(3))),
-        "timing" => (PlayerId(4), timing_violation_commands(PlayerId(4))),
+    let scenario = match scenario_name.as_str() {
+        "normal" => Scenario {
+            player_id: PlayerId(1),
+            commands: normal_commands(PlayerId(1)),
+            delay_between_commands: Duration::from_millis(100),
+        },
+        "suspicious" => Scenario {
+            player_id: PlayerId(2),
+            commands: suspicious_commands(PlayerId(2)),
+            delay_between_commands: Duration::from_millis(100),
+        },
+        "sequence" => Scenario {
+            player_id: PlayerId(3),
+            commands: sequence_violation_commands(PlayerId(3)),
+            delay_between_commands: Duration::from_millis(100),
+        },
+        "timing" => Scenario {
+            player_id: PlayerId(4),
+            commands: timing_violation_commands(PlayerId(4)),
+            delay_between_commands: Duration::from_millis(100),
+        },
+        "flood" => return run_flood_scenario(&server_addr),
+        "bad-protocol" => return run_bad_protocol_scenario(&server_addr),
         "help" | "--help" | "-h" => {
             print_help();
             return Ok(());
@@ -41,22 +65,88 @@ fn run() -> io::Result<()> {
     };
 
     println!("Connecting to {server_addr}");
-    println!("Scenario: {scenario}");
-    println!("Player: {:?}", player_id);
+    println!("Scenario: {scenario_name}");
+    println!("Player: {:?}", scenario.player_id);
     println!();
 
     let mut stream = connect_with_retry(&server_addr, Duration::from_secs(10))?;
     let reader_stream = stream.try_clone()?;
     let mut reader = BufReader::new(reader_stream);
 
-    send_message(&mut stream, &mut reader, &ClientMessage::Join { player_id })?;
+    send_message(
+        &mut stream,
+        &mut reader,
+        &ClientMessage::Join {
+            player_id: scenario.player_id,
+            protocol_version: Some(PROTOCOL_VERSION),
+        },
+    )?;
 
-    for command in commands {
+    for command in scenario.commands {
         send_message(&mut stream, &mut reader, &ClientMessage::Input(command))?;
-        thread::sleep(Duration::from_millis(100));
+
+        if !scenario.delay_between_commands.is_zero() {
+            thread::sleep(scenario.delay_between_commands);
+        }
     }
 
     Ok(())
+}
+
+fn run_flood_scenario(server_addr: &str) -> io::Result<()> {
+    let player_id = PlayerId(5);
+
+    println!("Connecting to {server_addr}");
+    println!("Scenario: flood");
+    println!("Player: {:?}", player_id);
+    println!();
+
+    let mut stream = connect_with_retry(server_addr, Duration::from_secs(10))?;
+    stream.set_nodelay(true)?;
+    stream.set_read_timeout(Some(Duration::from_millis(750)))?;
+
+    let reader_stream = stream.try_clone()?;
+    let mut reader = BufReader::new(reader_stream);
+
+    send_message(
+        &mut stream,
+        &mut reader,
+        &ClientMessage::Join {
+            player_id,
+            protocol_version: Some(PROTOCOL_VERSION),
+        },
+    )?;
+
+    for command in flood_commands(player_id) {
+        write_message(&mut stream, &ClientMessage::Input(command))?;
+    }
+
+    stream.flush()?;
+    read_available_responses(&mut reader)?;
+
+    Ok(())
+}
+
+fn run_bad_protocol_scenario(server_addr: &str) -> io::Result<()> {
+    let player_id = PlayerId(6);
+
+    println!("Connecting to {server_addr}");
+    println!("Scenario: bad-protocol");
+    println!("Player: {:?}", player_id);
+    println!();
+
+    let mut stream = connect_with_retry(server_addr, Duration::from_secs(10))?;
+    let reader_stream = stream.try_clone()?;
+    let mut reader = BufReader::new(reader_stream);
+
+    send_message(
+        &mut stream,
+        &mut reader,
+        &ClientMessage::Join {
+            player_id,
+            protocol_version: Some(PROTOCOL_VERSION + 999),
+        },
+    )
 }
 
 fn connect_with_retry(addr: &str, timeout: Duration) -> io::Result<TcpStream> {
@@ -87,6 +177,8 @@ fn print_help() {
     println!("  cargo run -p bot -- suspicious");
     println!("  cargo run -p bot -- sequence");
     println!("  cargo run -p bot -- timing");
+    println!("  cargo run -p bot -- flood");
+    println!("  cargo run -p bot -- bad-protocol");
     println!();
     println!("Environment:");
     println!("  SERVER_ADDR=127.0.0.1:4000");
@@ -97,14 +189,50 @@ fn send_message(
     reader: &mut BufReader<TcpStream>,
     message: &ClientMessage,
 ) -> io::Result<()> {
-    serde_json::to_writer(&mut *stream, message).map_err(to_invalid_data)?;
-    stream.write_all(b"\n")?;
-    stream.flush()?;
+    write_message(stream, message)?;
 
     let mut response = String::new();
     reader.read_line(&mut response)?;
 
     println!("server -> {}", response.trim());
+
+    Ok(())
+}
+
+fn write_message(stream: &mut TcpStream, message: &ClientMessage) -> io::Result<()> {
+    serde_json::to_writer(&mut *stream, message).map_err(to_invalid_data)?;
+    stream.write_all(b"\n")
+}
+
+fn read_available_responses(reader: &mut BufReader<TcpStream>) -> io::Result<()> {
+    let mut responses = 0usize;
+
+    loop {
+        let mut response = String::new();
+
+        match reader.read_line(&mut response) {
+            Ok(0) => break,
+            Ok(_) => {
+                responses += 1;
+                println!("server -> {}", response.trim());
+
+                if responses >= 120 {
+                    break;
+                }
+            }
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut
+                ) =>
+            {
+                break;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+
+    println!("Read {responses} flood responses.");
 
     Ok(())
 }
@@ -239,6 +367,21 @@ fn timing_violation_commands(player_id: PlayerId) -> Vec<InputCommand> {
             Some(Vec2::new(3.0, 0.0)),
         ),
     ]
+}
+
+fn flood_commands(player_id: PlayerId) -> Vec<InputCommand> {
+    (1..=80)
+        .map(|sequence| {
+            input(
+                player_id,
+                sequence,
+                sequence * 10,
+                Vec2::new(1.0, 0.0),
+                false,
+                Some(Vec2::new(sequence as f32, 0.0)),
+            )
+        })
+        .collect()
 }
 
 fn input(

@@ -32,6 +32,10 @@ Planned full pipeline:
 - Async Tokio TCP server
 - Structured tracing logs
 - Graceful shutdown handling
+- Protocol version validation
+- Per-connection rate limiting
+- Protocol firewall evidence records
+- Flood and bad-protocol bot scenarios
 
 ## Architecture
 
@@ -80,6 +84,11 @@ Structured logging:
 Graceful shutdown:
 
     Press Ctrl+C while the server is running.
+
+Protocol firewall scenarios:
+
+    cargo run -p bot -- flood
+    cargo run -p bot -- bad-protocol
 
 ## Docker run
 

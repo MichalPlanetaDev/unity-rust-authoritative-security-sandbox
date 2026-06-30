@@ -77,3 +77,15 @@ docker-evidence:
 
 docker-export-evidence:
     HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm export-evidence
+
+bot-flood:
+    cargo run -p bot -- flood
+
+bot-bad-protocol:
+    cargo run -p bot -- bad-protocol
+
+docker-bot-flood:
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm bot-flood
+
+docker-bot-bad-protocol:
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm bot-bad-protocol
