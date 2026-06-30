@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Security Sandbox Investigation HUD</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero panel">
+      <div>
+        <p class="eyebrow">Unity / Rust authoritative security sandbox</p>
+        <h1>Investigation HUD</h1>
+        <p class="lede">
+          Server-side telemetry review surface for suspicious players, protocol violations,
+          timing anomalies, and replayable evidence.
+        </p>
+      </div>
+
+      <div class="status-card">
+        <span class="pulse"></span>
+        <div>
+          <p class="muted">API status</p>
+          <strong id="api-status">connecting</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="metrics-grid">
+      <article class="metric panel">
+        <span class="metric-label">Events</span>
+        <strong id="event-count">—</strong>
+      </article>
+      <article class="metric panel">
+        <span class="metric-label">Violations</span>
+        <strong id="violation-count">—</strong>
+      </article>
+      <article class="metric panel">
+        <span class="metric-label">Suspicious players</span>
+        <strong id="player-count">—</strong>
+      </article>
+      <article class="metric panel">
+        <span class="metric-label">Top severity score</span>
+        <strong id="top-score">—</strong>
+      </article>
+    </section>
+
+    <section class="content-grid">
+      <article class="panel">
+        <div class="section-header">
+          <div>
+            <p class="eyebrow">Triage</p>
+            <h2>Suspicious players</h2>
+          </div>
+          <button id="refresh-button" class="ghost-button">Refresh</button>
+        </div>
+
+        <div id="players-list" class="players-list"></div>
+      </article>
+
+      <article class="panel">
+        <div class="section-header">
+          <div>
+            <p class="eyebrow">Evidence</p>
+            <h2>Violation breakdown</h2>
+          </div>
+        </div>
+
+        <div id="violation-breakdown" class="breakdown-list"></div>
+      </article>
+    </section>
+
+    <section class="panel timeline-panel">
+      <div class="section-header">
+        <div>
+          <p class="eyebrow">Replay</p>
+          <h2>Player timeline</h2>
+        </div>
+
+        <div class="player-picker">
+          <label for="player-id-input">Player ID</label>
+          <input id="player-id-input" type="number" min="1" value="2">
+          <button id="load-timeline-button">Load</button>
+        </div>
+      </div>
+
+      <div id="timeline" class="timeline"></div>
+    </section>
+  </main>
+
+  <script src="/dashboard.js"></script>
+</body>
+</html>

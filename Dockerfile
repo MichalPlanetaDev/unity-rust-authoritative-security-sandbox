@@ -11,6 +11,8 @@ FROM debian:bookworm-slim
 
 WORKDIR /workspace
 
+COPY dashboard ./dashboard
+
 COPY --from=builder /app/target/release/server /usr/local/bin/server
 COPY --from=builder /app/target/release/bot /usr/local/bin/bot
 COPY --from=builder /app/target/release/cli /usr/local/bin/cli

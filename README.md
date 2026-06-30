@@ -41,6 +41,8 @@ Planned full pipeline:
 - Queryable violation breakdown and player timeline
 - Read-only investigation API
 - API smoke test for Docker workflow
+- Static investigation dashboard
+- API-backed suspicious player and timeline HUD
 
 ## Architecture
 
@@ -106,6 +108,14 @@ Investigation API:
 
     cargo run -p investigation-api -- serve reports/investigation.db 127.0.0.1:8080
     cargo run -p investigation-api -- smoke 127.0.0.1:8080
+
+Investigation dashboard:
+
+    cargo run -p investigation-api -- serve reports/investigation.db 127.0.0.1:8080
+
+Then open:
+
+    http://127.0.0.1:8080
 
 ## Docker run
 

@@ -7,7 +7,7 @@
     "reason": "claimed position exceeded server movement budget",
     "observed_value": 24.0,
     "expected_limit": 1.15,
-    "server_time_ms": 2614
+    "server_time_ms": 21687
   },
   {
     "player_id": 2,
@@ -15,9 +15,9 @@
     "violation_code": "FireRateViolation",
     "severity": "Medium",
     "reason": "fire input arrived before cooldown expired",
-    "observed_value": 2902.0,
-    "expected_limit": 3258.0,
-    "server_time_ms": 2902
+    "observed_value": 22012.0,
+    "expected_limit": 22347.0,
+    "server_time_ms": 22012
   },
   {
     "player_id": 3,
@@ -27,7 +27,7 @@
     "reason": "command sequence number did not increase",
     "observed_value": 1.0,
     "expected_limit": 2.0,
-    "server_time_ms": 4158
+    "server_time_ms": 35278
   },
   {
     "player_id": 4,
@@ -37,7 +37,7 @@
     "reason": "client timestamp did not increase",
     "observed_value": 50.0,
     "expected_limit": 101.0,
-    "server_time_ms": 5366
+    "server_time_ms": 46882
   },
   {
     "player_id": 4,
@@ -47,7 +47,7 @@
     "reason": "client timestamp jumped too far forward",
     "observed_value": 4950.0,
     "expected_limit": 250.0,
-    "server_time_ms": 5510
+    "server_time_ms": 47042
   },
   {
     "player_id": 5,
@@ -57,7 +57,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 31.0,
     "expected_limit": 30.0,
-    "server_time_ms": 6535
+    "server_time_ms": 60185
   },
   {
     "player_id": 5,
@@ -67,7 +67,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 32.0,
     "expected_limit": 30.0,
-    "server_time_ms": 6536
+    "server_time_ms": 60206
   },
   {
     "player_id": 5,
@@ -77,7 +77,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 33.0,
     "expected_limit": 30.0,
-    "server_time_ms": 6538
+    "server_time_ms": 60226
   },
   {
     "player_id": 5,
@@ -87,7 +87,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 34.0,
     "expected_limit": 30.0,
-    "server_time_ms": 6539
+    "server_time_ms": 60246
   },
   {
     "player_id": 5,
@@ -97,7 +97,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 35.0,
     "expected_limit": 30.0,
-    "server_time_ms": 6541
+    "server_time_ms": 60267
   },
   {
     "player_id": 5,
@@ -107,7 +107,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 36.0,
     "expected_limit": 30.0,
-    "server_time_ms": 6542
+    "server_time_ms": 60284
   },
   {
     "player_id": 5,
@@ -117,7 +117,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 37.0,
     "expected_limit": 30.0,
-    "server_time_ms": 6543
+    "server_time_ms": 60306
   },
   {
     "player_id": 5,
@@ -127,7 +127,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 38.0,
     "expected_limit": 30.0,
-    "server_time_ms": 6544
+    "server_time_ms": 60325
   },
   {
     "player_id": 5,
@@ -137,7 +137,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 39.0,
     "expected_limit": 30.0,
-    "server_time_ms": 6546
+    "server_time_ms": 60346
   },
   {
     "player_id": 5,
@@ -147,7 +147,407 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 40.0,
     "expected_limit": 30.0,
-    "server_time_ms": 6547
+    "server_time_ms": 60372
+  },
+  {
+    "player_id": 5,
+    "sequence": 40,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60398
+  },
+  {
+    "player_id": 5,
+    "sequence": 41,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60421
+  },
+  {
+    "player_id": 5,
+    "sequence": 42,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60441
+  },
+  {
+    "player_id": 5,
+    "sequence": 43,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60461
+  },
+  {
+    "player_id": 5,
+    "sequence": 44,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60480
+  },
+  {
+    "player_id": 5,
+    "sequence": 45,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60502
+  },
+  {
+    "player_id": 5,
+    "sequence": 46,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60527
+  },
+  {
+    "player_id": 5,
+    "sequence": 47,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60543
+  },
+  {
+    "player_id": 5,
+    "sequence": 48,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60563
+  },
+  {
+    "player_id": 5,
+    "sequence": 49,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60586
+  },
+  {
+    "player_id": 5,
+    "sequence": 50,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60605
+  },
+  {
+    "player_id": 5,
+    "sequence": 51,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60623
+  },
+  {
+    "player_id": 5,
+    "sequence": 52,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60639
+  },
+  {
+    "player_id": 5,
+    "sequence": 53,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60657
+  },
+  {
+    "player_id": 5,
+    "sequence": 54,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60682
+  },
+  {
+    "player_id": 5,
+    "sequence": 55,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60700
+  },
+  {
+    "player_id": 5,
+    "sequence": 56,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60728
+  },
+  {
+    "player_id": 5,
+    "sequence": 57,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60752
+  },
+  {
+    "player_id": 5,
+    "sequence": 58,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60763
+  },
+  {
+    "player_id": 5,
+    "sequence": 59,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60765
+  },
+  {
+    "player_id": 5,
+    "sequence": 60,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60765
+  },
+  {
+    "player_id": 5,
+    "sequence": 61,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60766
+  },
+  {
+    "player_id": 5,
+    "sequence": 62,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60783
+  },
+  {
+    "player_id": 5,
+    "sequence": 63,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60784
+  },
+  {
+    "player_id": 5,
+    "sequence": 64,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60784
+  },
+  {
+    "player_id": 5,
+    "sequence": 65,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60785
+  },
+  {
+    "player_id": 5,
+    "sequence": 66,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60812
+  },
+  {
+    "player_id": 5,
+    "sequence": 67,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60832
+  },
+  {
+    "player_id": 5,
+    "sequence": 68,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60833
+  },
+  {
+    "player_id": 5,
+    "sequence": 69,
+    "violation_code": "SpeedHack",
+    "severity": "High",
+    "reason": "claimed position exceeded server movement budget",
+    "observed_value": 11.0,
+    "expected_limit": 1.15,
+    "server_time_ms": 60850
+  },
+  {
+    "player_id": 5,
+    "sequence": 0,
+    "violation_code": "RateLimitViolation",
+    "severity": "Medium",
+    "reason": "connection exceeded message rate limit",
+    "observed_value": 31.0,
+    "expected_limit": 30.0,
+    "server_time_ms": 60868
+  },
+  {
+    "player_id": 5,
+    "sequence": 0,
+    "violation_code": "RateLimitViolation",
+    "severity": "Medium",
+    "reason": "connection exceeded message rate limit",
+    "observed_value": 32.0,
+    "expected_limit": 30.0,
+    "server_time_ms": 60869
+  },
+  {
+    "player_id": 5,
+    "sequence": 0,
+    "violation_code": "RateLimitViolation",
+    "severity": "Medium",
+    "reason": "connection exceeded message rate limit",
+    "observed_value": 33.0,
+    "expected_limit": 30.0,
+    "server_time_ms": 60869
+  },
+  {
+    "player_id": 5,
+    "sequence": 0,
+    "violation_code": "RateLimitViolation",
+    "severity": "Medium",
+    "reason": "connection exceeded message rate limit",
+    "observed_value": 34.0,
+    "expected_limit": 30.0,
+    "server_time_ms": 60869
+  },
+  {
+    "player_id": 5,
+    "sequence": 0,
+    "violation_code": "RateLimitViolation",
+    "severity": "Medium",
+    "reason": "connection exceeded message rate limit",
+    "observed_value": 35.0,
+    "expected_limit": 30.0,
+    "server_time_ms": 60887
+  },
+  {
+    "player_id": 5,
+    "sequence": 0,
+    "violation_code": "RateLimitViolation",
+    "severity": "Medium",
+    "reason": "connection exceeded message rate limit",
+    "observed_value": 36.0,
+    "expected_limit": 30.0,
+    "server_time_ms": 60908
+  },
+  {
+    "player_id": 5,
+    "sequence": 0,
+    "violation_code": "RateLimitViolation",
+    "severity": "Medium",
+    "reason": "connection exceeded message rate limit",
+    "observed_value": 37.0,
+    "expected_limit": 30.0,
+    "server_time_ms": 60931
+  },
+  {
+    "player_id": 5,
+    "sequence": 0,
+    "violation_code": "RateLimitViolation",
+    "severity": "Medium",
+    "reason": "connection exceeded message rate limit",
+    "observed_value": 38.0,
+    "expected_limit": 30.0,
+    "server_time_ms": 60953
+  },
+  {
+    "player_id": 5,
+    "sequence": 0,
+    "violation_code": "RateLimitViolation",
+    "severity": "Medium",
+    "reason": "connection exceeded message rate limit",
+    "observed_value": 39.0,
+    "expected_limit": 30.0,
+    "server_time_ms": 60971
+  },
+  {
+    "player_id": 5,
+    "sequence": 0,
+    "violation_code": "RateLimitViolation",
+    "severity": "Medium",
+    "reason": "connection exceeded message rate limit",
+    "observed_value": 40.0,
+    "expected_limit": 30.0,
+    "server_time_ms": 60993
   },
   {
     "player_id": 5,
@@ -157,407 +557,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 41.0,
     "expected_limit": 30.0,
-    "server_time_ms": 6549
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 42.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6550
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 43.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6551
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 44.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6553
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 45.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6554
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 46.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6556
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 47.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6557
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 48.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6558
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 49.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6559
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 50.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6560
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 51.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6562
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 52.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6563
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 53.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6565
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 54.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6566
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 55.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6567
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 56.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6569
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 57.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6570
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 58.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6572
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 59.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6573
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 60.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6574
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 61.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6575
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 62.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6577
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 63.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6578
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 64.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6580
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 65.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6581
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 66.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6582
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 67.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6584
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 68.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6585
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 69.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6586
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 70.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6588
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 71.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6589
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 72.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6590
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 73.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6591
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 74.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6592
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 75.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6594
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 76.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6595
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 77.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6597
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 78.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6598
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 79.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6599
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 80.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6600
-  },
-  {
-    "player_id": 5,
-    "sequence": 0,
-    "violation_code": "RateLimitViolation",
-    "severity": "Medium",
-    "reason": "connection exceeded message rate limit",
-    "observed_value": 81.0,
-    "expected_limit": 30.0,
-    "server_time_ms": 6601
+    "server_time_ms": 61010
   },
   {
     "player_id": 6,
@@ -567,6 +567,6 @@
     "reason": "unsupported protocol version",
     "observed_value": 1000.0,
     "expected_limit": 1.0,
-    "server_time_ms": 8300
+    "server_time_ms": 74129
   }
 ]

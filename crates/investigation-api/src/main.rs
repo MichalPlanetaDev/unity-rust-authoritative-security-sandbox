@@ -17,6 +17,7 @@ use investigation::InvestigationDatabase;
 use protocol::PlayerId;
 use serde::Serialize;
 use tokio::net::TcpListener;
+use tower_http::services::ServeDir;
 use tracing::{error, info};
 use tracing_subscriber::EnvFilter;
 
@@ -187,6 +188,7 @@ async fn serve(database_path: PathBuf, bind_addr: &str) -> AppResult<()> {
         .route("/players/suspicious", get(suspicious_players))
         .route("/violations/breakdown", get(violation_breakdown))
         .route("/players/:player_id/timeline", get(player_timeline))
+        .fallback_service(ServeDir::new("dashboard").append_index_html_on_directories(true))
         .with_state(state);
 
     let listener = TcpListener::bind(bind_addr).await?;
@@ -194,6 +196,7 @@ async fn serve(database_path: PathBuf, bind_addr: &str) -> AppResult<()> {
     info!(
         bind_addr,
         database_path = %database_path.display(),
+        dashboard_dir = "dashboard",
         "investigation api listening"
     );
 
@@ -288,6 +291,9 @@ fn open_database(state: &AppState) -> Result<InvestigationDatabase, ApiError> {
 fn run_smoke_test(base_addr: &str) -> io::Result<()> {
     let host = normalize_base_addr(base_addr);
     let paths = [
+        "/",
+        "/styles.css",
+        "/dashboard.js",
         "/health",
         "/players/suspicious",
         "/violations/breakdown",
