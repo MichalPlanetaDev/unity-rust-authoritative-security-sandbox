@@ -6,6 +6,7 @@ export HOST_GID="${HOST_GID:-$(id -g)}"
 
 mkdir -p samples reports
 rm -f samples/session.jsonl
+rm -f reports/evidence.json reports/evidence.csv
 
 docker compose down --remove-orphans
 docker compose build
@@ -24,10 +25,18 @@ docker compose run --rm bot-sequence
 docker compose run --rm bot-timing
 docker compose run --rm summary
 docker compose run --rm risk
+docker compose run --rm timeline
+docker compose run --rm evidence
+docker compose run --rm export-evidence
 
 test -f samples/session.jsonl
+test -f reports/evidence.json
+test -f reports/evidence.csv
+
 grep -q "Suspicion" samples/session.jsonl
 grep -q "ClientTimeViolation" samples/session.jsonl
+grep -q "ClientTimeViolation" reports/evidence.json
+grep -q "ClientTimeViolation" reports/evidence.csv
 
 echo
 echo "Docker demo finished successfully."

@@ -12,9 +12,10 @@ use std::{
 
 use protocol::{
     ClientMessage, InputCommand, Milliseconds, PlayerId, PlayerSnapshot, ServerMessage,
-    SuspicionKind, SuspicionReport, TelemetryEvent, Vec2,
+    SuspicionKind, TelemetryEvent, Vec2,
 };
 use telemetry::TelemetryWriter;
+use validation::{PlayerValidationState, ValidationPolicy, validate_input};
 
 const DEFAULT_CONFIG_PATH: &str = "config/default.toml";
 
@@ -40,6 +41,16 @@ impl ServerConfig {
                 format!("failed to parse config '{}': {}", path.display(), error),
             )
         })
+    }
+
+    fn validation_policy(&self) -> ValidationPolicy {
+        ValidationPolicy {
+            max_speed_units_per_second: self.max_speed_units_per_second,
+            movement_tolerance_units: self.movement_tolerance_units,
+            fixed_tick_ms: self.fixed_tick_ms,
+            fire_cooldown_ms: self.fire_cooldown_ms,
+            max_client_time_step_ms: self.max_client_time_step_ms,
+        }
     }
 }
 
@@ -72,6 +83,16 @@ impl PlayerState {
             health: self.health,
             alive: self.alive,
             server_time_ms,
+        }
+    }
+
+    fn validation_state(&self) -> PlayerValidationState {
+        PlayerValidationState {
+            position: self.position,
+            alive: self.alive,
+            last_sequence: self.last_sequence,
+            last_client_time_ms: self.last_client_time_ms,
+            next_allowed_fire_time_ms: self.next_allowed_fire_time_ms,
         }
     }
 }
@@ -258,97 +279,34 @@ fn process_input(
 
     let response = {
         let mut world = shared.world.lock().expect("world lock poisoned");
-
-        let max_speed = world.config.max_speed_units_per_second;
-        let tolerance = world.config.movement_tolerance_units;
-        let fixed_tick_ms = world.config.fixed_tick_ms;
-        let fire_cooldown_ms = world.config.fire_cooldown_ms;
-        let max_client_time_step_ms = world.config.max_client_time_step_ms;
+        let policy = world.config.validation_policy();
 
         let state = world
             .players
             .entry(command.player_id)
             .or_insert_with(PlayerState::new);
 
-        if command.sequence <= state.last_sequence {
-            let report = SuspicionReport::new(
-                command.player_id,
-                command.sequence,
-                SuspicionKind::PacketSequenceViolation,
-                "command sequence number did not increase",
-                command.sequence as f32,
-                (state.last_sequence + 1) as f32,
-                server_time_ms,
-            );
+        let decision = validate_input(&command, state.validation_state(), policy, server_time_ms);
 
+        let accepted = decision.accepted;
+        let rejection_reason = decision.rejection_reason.clone();
+        let has_fire_rate_violation = decision.has_kind(SuspicionKind::FireRateViolation);
+
+        for report in decision.reports {
             events.push(TelemetryEvent::Suspicion(report));
+        }
 
+        if !accepted {
             ServerMessage::Rejected {
-                reason: "command sequence number did not increase".to_string(),
-            }
-        } else if !state.alive {
-            let report = SuspicionReport::new(
-                command.player_id,
-                command.sequence,
-                SuspicionKind::InvalidStateTransition,
-                "dead player attempted to send input",
-                1.0,
-                0.0,
-                server_time_ms,
-            );
-
-            events.push(TelemetryEvent::Suspicion(report));
-
-            ServerMessage::Rejected {
-                reason: "dead player cannot send input".to_string(),
+                reason: rejection_reason.unwrap_or_else(|| "input rejected".to_string()),
             }
         } else {
-            inspect_client_time(
-                &command,
-                state.last_client_time_ms,
-                max_client_time_step_ms,
-                server_time_ms,
-                &mut events,
-            );
-
-            if let Some(claimed_position) = command.claimed_position {
-                let observed_distance = state.position.distance(claimed_position);
-                let allowed_distance = max_speed * (fixed_tick_ms as f32 / 1000.0) + tolerance;
-
-                if observed_distance > allowed_distance {
-                    let report = SuspicionReport::new(
-                        command.player_id,
-                        command.sequence,
-                        SuspicionKind::SpeedHack,
-                        "claimed position exceeded server movement budget",
-                        observed_distance,
-                        allowed_distance,
-                        server_time_ms,
-                    );
-
-                    events.push(TelemetryEvent::Suspicion(report));
-                }
+            if command.fire && !has_fire_rate_violation {
+                state.next_allowed_fire_time_ms = server_time_ms + policy.fire_cooldown_ms;
             }
 
-            if command.fire {
-                if server_time_ms < state.next_allowed_fire_time_ms {
-                    let report = SuspicionReport::new(
-                        command.player_id,
-                        command.sequence,
-                        SuspicionKind::FireRateViolation,
-                        "fire input arrived before cooldown expired",
-                        server_time_ms as f32,
-                        state.next_allowed_fire_time_ms as f32,
-                        server_time_ms,
-                    );
-
-                    events.push(TelemetryEvent::Suspicion(report));
-                } else {
-                    state.next_allowed_fire_time_ms = server_time_ms + fire_cooldown_ms;
-                }
-            }
-
-            let movement_budget = max_speed * (fixed_tick_ms as f32 / 1000.0);
+            let movement_budget =
+                policy.max_speed_units_per_second * (policy.fixed_tick_ms as f32 / 1000.0);
             let movement_delta = command.movement.normalized().scaled(movement_budget);
 
             state.position = state.position.add_vector(movement_delta);
@@ -372,49 +330,6 @@ fn process_input(
     }
 
     response
-}
-
-fn inspect_client_time(
-    command: &InputCommand,
-    previous_client_time_ms: Option<Milliseconds>,
-    max_client_time_step_ms: Milliseconds,
-    server_time_ms: Milliseconds,
-    events: &mut Vec<TelemetryEvent>,
-) {
-    let Some(previous_client_time_ms) = previous_client_time_ms else {
-        return;
-    };
-
-    if command.client_time_ms <= previous_client_time_ms {
-        let report = SuspicionReport::new(
-            command.player_id,
-            command.sequence,
-            SuspicionKind::ClientTimeViolation,
-            "client timestamp did not increase",
-            command.client_time_ms as f32,
-            (previous_client_time_ms + 1) as f32,
-            server_time_ms,
-        );
-
-        events.push(TelemetryEvent::Suspicion(report));
-        return;
-    }
-
-    let observed_step = command.client_time_ms - previous_client_time_ms;
-
-    if observed_step > max_client_time_step_ms {
-        let report = SuspicionReport::new(
-            command.player_id,
-            command.sequence,
-            SuspicionKind::ClientTimeViolation,
-            "client timestamp jumped too far forward",
-            observed_step as f32,
-            max_client_time_step_ms as f32,
-            server_time_ms,
-        );
-
-        events.push(TelemetryEvent::Suspicion(report));
-    }
 }
 
 fn to_invalid_data(error: serde_json::Error) -> io::Error {

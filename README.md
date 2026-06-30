@@ -27,6 +27,8 @@ Planned full pipeline:
 - Server-side session replay timeline
 - Client timestamp anomaly detection
 - Timing violation bot scenario
+- Dedicated validation engine crate
+- Evidence model with JSON/CSV export
 
 ## Architecture
 
@@ -59,6 +61,14 @@ Replay ordered telemetry timeline:
 Timing anomaly bot:
 
     cargo run -p bot -- timing
+
+Evidence inspection:
+
+    cargo run -p cli -- evidence samples/session.jsonl
+
+Evidence export:
+
+    cargo run -p cli -- export-evidence samples/session.jsonl reports/evidence.json reports/evidence.csv
 
 ## Docker run
 

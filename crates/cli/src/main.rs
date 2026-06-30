@@ -1,7 +1,13 @@
-use std::{collections::BTreeMap, io};
+use std::{
+    collections::BTreeMap,
+    fs::File,
+    io::{self, BufWriter, Write},
+    path::Path,
+};
 
 use protocol::{ConnectionId, InputCommand, Milliseconds, PlayerId, SuspicionKind, TelemetryEvent};
 use telemetry::read_events;
+use validation::{EvidenceRecord, evidence_records_from_events};
 
 fn main() {
     if let Err(error) = run() {
@@ -38,6 +44,32 @@ fn run() -> io::Result<()> {
 
             print_timeline(path)
         }
+        Some("evidence") => {
+            let Some(path) = args.get(1) else {
+                eprintln!("missing telemetry path");
+                std::process::exit(2);
+            };
+
+            print_evidence(path)
+        }
+        Some("export-evidence") => {
+            let Some(input_path) = args.get(1) else {
+                eprintln!("missing telemetry path");
+                std::process::exit(2);
+            };
+
+            let Some(json_path) = args.get(2) else {
+                eprintln!("missing JSON output path");
+                std::process::exit(2);
+            };
+
+            let Some(csv_path) = args.get(3) else {
+                eprintln!("missing CSV output path");
+                std::process::exit(2);
+            };
+
+            export_evidence(input_path, json_path, csv_path)
+        }
         Some("help") | Some("--help") | Some("-h") | None => {
             print_help();
             Ok(())
@@ -55,6 +87,10 @@ fn print_help() {
     println!("  cargo run -p cli -- summary samples/session.jsonl");
     println!("  cargo run -p cli -- risk samples/session.jsonl");
     println!("  cargo run -p cli -- timeline samples/session.jsonl");
+    println!("  cargo run -p cli -- evidence samples/session.jsonl");
+    println!(
+        "  cargo run -p cli -- export-evidence samples/session.jsonl reports/evidence.json reports/evidence.csv"
+    );
 }
 
 fn print_summary(path: &str) -> io::Result<()> {
@@ -186,6 +222,101 @@ fn print_timeline(path: &str) -> io::Result<()> {
     Ok(())
 }
 
+fn print_evidence(path: &str) -> io::Result<()> {
+    let events = read_events(path)?;
+    let records = evidence_records_from_events(&events);
+
+    println!("Evidence records");
+    println!();
+    println!("File: {path}");
+    println!("Records: {}", records.len());
+    println!();
+
+    if records.is_empty() {
+        println!("No evidence records found.");
+        return Ok(());
+    }
+
+    for record in records {
+        println!(
+            "player={:?} seq={} code={:?} severity={:?} observed={:.3} limit={:.3} time={}ms",
+            record.player_id,
+            record.sequence,
+            record.violation_code,
+            record.severity,
+            record.observed_value,
+            record.expected_limit,
+            record.server_time_ms
+        );
+        println!("  reason={}", record.reason);
+    }
+
+    Ok(())
+}
+
+fn export_evidence(input_path: &str, json_path: &str, csv_path: &str) -> io::Result<()> {
+    let events = read_events(input_path)?;
+    let records = evidence_records_from_events(&events);
+
+    write_evidence_json(json_path, &records)?;
+    write_evidence_csv(csv_path, &records)?;
+
+    println!("Exported evidence");
+    println!();
+    println!("Input: {input_path}");
+    println!("JSON: {json_path}");
+    println!("CSV: {csv_path}");
+    println!("Records: {}", records.len());
+
+    Ok(())
+}
+
+fn write_evidence_json(path: impl AsRef<Path>, records: &[EvidenceRecord]) -> io::Result<()> {
+    let path = path.as_ref();
+
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+
+    let file = File::create(path)?;
+    let writer = BufWriter::new(file);
+
+    serde_json::to_writer_pretty(writer, records).map_err(to_invalid_data)
+}
+
+fn write_evidence_csv(path: impl AsRef<Path>, records: &[EvidenceRecord]) -> io::Result<()> {
+    let path = path.as_ref();
+
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+
+    let file = File::create(path)?;
+    let mut writer = BufWriter::new(file);
+
+    writeln!(
+        writer,
+        "player_id,sequence,violation_code,severity,reason,observed_value,expected_limit,server_time_ms"
+    )?;
+
+    for record in records {
+        writeln!(
+            writer,
+            "{},{},{:?},{:?},{},{:.3},{:.3},{}",
+            record.player_id.0,
+            record.sequence,
+            record.violation_code,
+            record.severity,
+            csv_escape(&record.reason),
+            record.observed_value,
+            record.expected_limit,
+            record.server_time_ms
+        )?;
+    }
+
+    writer.flush()
+}
+
 #[derive(Debug)]
 struct TimelineRow {
     server_time_ms: Milliseconds,
@@ -303,4 +434,16 @@ fn risk_weight(kind: &SuspicionKind) -> u32 {
         SuspicionKind::PacketSequenceViolation => 20,
         SuspicionKind::ClientTimeViolation => 20,
     }
+}
+
+fn csv_escape(value: &str) -> String {
+    if value.contains(',') || value.contains('"') || value.contains('\n') {
+        format!("\"{}\"", value.replace('"', "\"\""))
+    } else {
+        value.to_string()
+    }
+}
+
+fn to_invalid_data(error: serde_json::Error) -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidData, error)
 }

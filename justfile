@@ -62,3 +62,18 @@ bot-timing:
 
 docker-bot-timing:
     HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm bot-timing
+
+evidence:
+    cargo run -p cli -- evidence samples/session.jsonl
+
+export-evidence:
+    cargo run -p cli -- export-evidence samples/session.jsonl reports/evidence.json reports/evidence.csv
+
+docker-timeline:
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm timeline
+
+docker-evidence:
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm evidence
+
+docker-export-evidence:
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm export-evidence

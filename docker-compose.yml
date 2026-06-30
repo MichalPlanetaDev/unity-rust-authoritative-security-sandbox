@@ -72,3 +72,27 @@ services:
     command: cli risk samples/session.jsonl
     volumes:
       - .:/workspace
+
+  timeline:
+    build: .
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /workspace
+    command: cli timeline samples/session.jsonl
+    volumes:
+      - .:/workspace
+
+  evidence:
+    build: .
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /workspace
+    command: cli evidence samples/session.jsonl
+    volumes:
+      - .:/workspace
+
+  export-evidence:
+    build: .
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /workspace
+    command: cli export-evidence samples/session.jsonl reports/evidence.json reports/evidence.csv
+    volumes:
+      - .:/workspace
