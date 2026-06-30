@@ -1,11 +1,10 @@
 [package]
-name = "cli"
+name = "investigation"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 protocol = { path = "../protocol" }
-telemetry = { path = "../telemetry" }
 validation = { path = "../validation" }
-investigation = { path = "../investigation" }
+rusqlite = { version = "0.32", features = ["bundled"] }
 serde_json = "1"

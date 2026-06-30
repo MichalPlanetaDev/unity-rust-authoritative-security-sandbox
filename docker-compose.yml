@@ -120,3 +120,35 @@ services:
     command: cli export-evidence samples/session.jsonl reports/evidence.json reports/evidence.csv
     volumes:
       - .:/workspace
+
+  ingest-db:
+    build: .
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /workspace
+    command: cli ingest-db samples/session.jsonl reports/investigation.db
+    volumes:
+      - .:/workspace
+
+  query-db-suspicious:
+    build: .
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /workspace
+    command: cli query-db suspicious-players reports/investigation.db
+    volumes:
+      - .:/workspace
+
+  query-db-breakdown:
+    build: .
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /workspace
+    command: cli query-db violation-breakdown reports/investigation.db
+    volumes:
+      - .:/workspace
+
+  query-db-player-timeline:
+    build: .
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /workspace
+    command: cli query-db player-timeline reports/investigation.db 2
+    volumes:
+      - .:/workspace

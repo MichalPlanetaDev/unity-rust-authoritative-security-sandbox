@@ -36,6 +36,9 @@ Planned full pipeline:
 - Per-connection rate limiting
 - Protocol firewall evidence records
 - Flood and bad-protocol bot scenarios
+- SQLite investigation database
+- Queryable suspicious player reports
+- Queryable violation breakdown and player timeline
 
 ## Architecture
 
@@ -89,6 +92,13 @@ Protocol firewall scenarios:
 
     cargo run -p bot -- flood
     cargo run -p bot -- bad-protocol
+
+Investigation database:
+
+    cargo run -p cli -- ingest-db samples/session.jsonl reports/investigation.db
+    cargo run -p cli -- query-db suspicious-players reports/investigation.db
+    cargo run -p cli -- query-db violation-breakdown reports/investigation.db
+    cargo run -p cli -- query-db player-timeline reports/investigation.db 2
 
 ## Docker run
 

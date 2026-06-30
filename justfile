@@ -89,3 +89,27 @@ docker-bot-flood:
 
 docker-bot-bad-protocol:
     HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm bot-bad-protocol
+
+ingest-db:
+    cargo run -p cli -- ingest-db samples/session.jsonl reports/investigation.db
+
+query-db-suspicious:
+    cargo run -p cli -- query-db suspicious-players reports/investigation.db
+
+query-db-breakdown:
+    cargo run -p cli -- query-db violation-breakdown reports/investigation.db
+
+query-db-player-timeline:
+    cargo run -p cli -- query-db player-timeline reports/investigation.db 2
+
+docker-ingest-db:
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm ingest-db
+
+docker-query-db-suspicious:
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm query-db-suspicious
+
+docker-query-db-breakdown:
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm query-db-breakdown
+
+docker-query-db-player-timeline:
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm query-db-player-timeline

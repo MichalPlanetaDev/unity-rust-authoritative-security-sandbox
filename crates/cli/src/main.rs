@@ -5,6 +5,7 @@ use std::{
     path::Path,
 };
 
+use investigation::InvestigationDatabase;
 use protocol::{ConnectionId, InputCommand, Milliseconds, PlayerId, SuspicionKind, TelemetryEvent};
 use telemetry::read_events;
 use validation::{EvidenceRecord, evidence_records_from_events};
@@ -20,38 +21,10 @@ fn run() -> io::Result<()> {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
 
     match args.first().map(String::as_str) {
-        Some("summary") => {
-            let Some(path) = args.get(1) else {
-                eprintln!("missing telemetry path");
-                std::process::exit(2);
-            };
-
-            print_summary(path)
-        }
-        Some("risk") => {
-            let Some(path) = args.get(1) else {
-                eprintln!("missing telemetry path");
-                std::process::exit(2);
-            };
-
-            print_risk(path)
-        }
-        Some("timeline") => {
-            let Some(path) = args.get(1) else {
-                eprintln!("missing telemetry path");
-                std::process::exit(2);
-            };
-
-            print_timeline(path)
-        }
-        Some("evidence") => {
-            let Some(path) = args.get(1) else {
-                eprintln!("missing telemetry path");
-                std::process::exit(2);
-            };
-
-            print_evidence(path)
-        }
+        Some("summary") => require_one_path(&args, print_summary),
+        Some("risk") => require_one_path(&args, print_risk),
+        Some("timeline") => require_one_path(&args, print_timeline),
+        Some("evidence") => require_one_path(&args, print_evidence),
         Some("export-evidence") => {
             let Some(input_path) = args.get(1) else {
                 eprintln!("missing telemetry path");
@@ -70,6 +43,27 @@ fn run() -> io::Result<()> {
 
             export_evidence(input_path, json_path, csv_path)
         }
+        Some("ingest-db") => {
+            let Some(input_path) = args.get(1) else {
+                eprintln!("missing telemetry path");
+                std::process::exit(2);
+            };
+
+            let Some(database_path) = args.get(2) else {
+                eprintln!("missing database path");
+                std::process::exit(2);
+            };
+
+            ingest_database(input_path, database_path)
+        }
+        Some("query-db") => {
+            let Some(query_name) = args.get(1) else {
+                eprintln!("missing database query name");
+                std::process::exit(2);
+            };
+
+            query_database(query_name, &args[2..])
+        }
         Some("help") | Some("--help") | Some("-h") | None => {
             print_help();
             Ok(())
@@ -82,6 +76,15 @@ fn run() -> io::Result<()> {
     }
 }
 
+fn require_one_path(args: &[String], handler: fn(&str) -> io::Result<()>) -> io::Result<()> {
+    let Some(path) = args.get(1) else {
+        eprintln!("missing telemetry path");
+        std::process::exit(2);
+    };
+
+    handler(path)
+}
+
 fn print_help() {
     println!("Usage:");
     println!("  cargo run -p cli -- summary samples/session.jsonl");
@@ -91,6 +94,10 @@ fn print_help() {
     println!(
         "  cargo run -p cli -- export-evidence samples/session.jsonl reports/evidence.json reports/evidence.csv"
     );
+    println!("  cargo run -p cli -- ingest-db samples/session.jsonl reports/investigation.db");
+    println!("  cargo run -p cli -- query-db suspicious-players reports/investigation.db");
+    println!("  cargo run -p cli -- query-db violation-breakdown reports/investigation.db");
+    println!("  cargo run -p cli -- query-db player-timeline reports/investigation.db 2");
 }
 
 fn print_summary(path: &str) -> io::Result<()> {
@@ -271,6 +278,150 @@ fn export_evidence(input_path: &str, json_path: &str, csv_path: &str) -> io::Res
     Ok(())
 }
 
+fn ingest_database(input_path: &str, database_path: &str) -> io::Result<()> {
+    let events = read_events(input_path)?;
+    let mut database = InvestigationDatabase::open(database_path).map_err(to_io_error)?;
+    let evidence_count = database.ingest_events(&events).map_err(to_io_error)?;
+    let health = database.database_health().map_err(to_io_error)?;
+
+    println!("Investigation database ingested");
+    println!();
+    println!("Input: {input_path}");
+    println!("Database: {database_path}");
+    println!("Events: {}", health.event_count);
+    println!("Violations: {}", health.violation_count);
+    println!("Evidence records: {evidence_count}");
+
+    Ok(())
+}
+
+fn query_database(query_name: &str, args: &[String]) -> io::Result<()> {
+    match query_name {
+        "suspicious-players" => {
+            let Some(database_path) = args.first() else {
+                eprintln!("missing database path");
+                std::process::exit(2);
+            };
+
+            query_suspicious_players(database_path)
+        }
+        "violation-breakdown" => {
+            let Some(database_path) = args.first() else {
+                eprintln!("missing database path");
+                std::process::exit(2);
+            };
+
+            query_violation_breakdown(database_path)
+        }
+        "player-timeline" => {
+            let Some(database_path) = args.first() else {
+                eprintln!("missing database path");
+                std::process::exit(2);
+            };
+
+            let Some(player_id) = args.get(1) else {
+                eprintln!("missing player id");
+                std::process::exit(2);
+            };
+
+            let player_id = player_id.parse::<u64>().map_err(|error| {
+                io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    format!("invalid player id '{player_id}': {error}"),
+                )
+            })?;
+
+            query_player_timeline(database_path, PlayerId(player_id))
+        }
+        unknown => {
+            eprintln!("unknown database query: {unknown}");
+            print_help();
+            std::process::exit(2);
+        }
+    }
+}
+
+fn query_suspicious_players(database_path: &str) -> io::Result<()> {
+    let database = InvestigationDatabase::open(database_path).map_err(to_io_error)?;
+    let rows = database.suspicious_players().map_err(to_io_error)?;
+
+    println!("Suspicious players");
+    println!();
+    println!("Database: {database_path}");
+    println!("Rows: {}", rows.len());
+    println!();
+
+    if rows.is_empty() {
+        println!("No suspicious players found.");
+        return Ok(());
+    }
+
+    for row in rows {
+        println!(
+            "player={:?} reports={} severity_score={} last_seen={}ms",
+            row.player_id, row.report_count, row.severity_score, row.last_seen_ms
+        );
+    }
+
+    Ok(())
+}
+
+fn query_violation_breakdown(database_path: &str) -> io::Result<()> {
+    let database = InvestigationDatabase::open(database_path).map_err(to_io_error)?;
+    let rows = database.violation_breakdown().map_err(to_io_error)?;
+
+    println!("Violation breakdown");
+    println!();
+    println!("Database: {database_path}");
+    println!("Rows: {}", rows.len());
+    println!();
+
+    if rows.is_empty() {
+        println!("No violations found.");
+        return Ok(());
+    }
+
+    for row in rows {
+        println!(
+            "code={} severity={} count={} first_seen={}ms last_seen={}ms",
+            row.violation_code, row.severity, row.count, row.first_seen_ms, row.last_seen_ms
+        );
+    }
+
+    Ok(())
+}
+
+fn query_player_timeline(database_path: &str, player_id: PlayerId) -> io::Result<()> {
+    let database = InvestigationDatabase::open(database_path).map_err(to_io_error)?;
+    let rows = database.player_timeline(player_id).map_err(to_io_error)?;
+
+    println!("Database player timeline");
+    println!();
+    println!("Database: {database_path}");
+    println!("Player: {:?}", player_id);
+    println!("Rows: {}", rows.len());
+    println!();
+
+    if rows.is_empty() {
+        println!("No timeline rows found.");
+        return Ok(());
+    }
+
+    for row in rows {
+        println!(
+            "#{:04} [{:08}ms] type={} conn={} seq={} {}",
+            row.event_index,
+            row.server_time_ms,
+            row.event_type,
+            format_connection_id(row.connection_id),
+            format_sequence(row.sequence),
+            row.summary
+        );
+    }
+
+    Ok(())
+}
+
 fn write_evidence_json(path: impl AsRef<Path>, records: &[EvidenceRecord]) -> io::Result<()> {
     let path = path.as_ref();
 
@@ -426,6 +577,13 @@ fn format_player_id(player_id: Option<PlayerId>) -> String {
     }
 }
 
+fn format_sequence(sequence: Option<u64>) -> String {
+    match sequence {
+        Some(sequence) => sequence.to_string(),
+        None => "-".to_string(),
+    }
+}
+
 fn risk_weight(kind: &SuspicionKind) -> u32 {
     match kind {
         SuspicionKind::SpeedHack => 40,
@@ -444,6 +602,10 @@ fn csv_escape(value: &str) -> String {
     } else {
         value.to_string()
     }
+}
+
+fn to_io_error(error: impl std::error::Error + Send + Sync + 'static) -> io::Error {
+    io::Error::other(error)
 }
 
 fn to_invalid_data(error: serde_json::Error) -> io::Error {

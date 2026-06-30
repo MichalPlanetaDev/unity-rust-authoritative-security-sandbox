@@ -4,6 +4,7 @@ resolver = "2"
 members = [
     "crates/protocol",
     "crates/validation",
+    "crates/investigation",
     "crates/telemetry",
     "crates/server",
     "crates/bot",
