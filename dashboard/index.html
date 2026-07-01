@@ -3,89 +3,146 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Security Sandbox Investigation HUD</title>
+  <title>Investigation HUD | Unity Rust Authoritative Security Sandbox</title>
+  <meta
+    name="description"
+    content="A defensive investigation dashboard for server-authoritative multiplayer validation, telemetry, evidence review, and suspicious-player triage."
+  >
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <main class="shell">
     <section class="hero panel">
-      <div>
-        <p class="eyebrow">Unity / Rust authoritative security sandbox</p>
+      <div class="hero-copy">
+        <p class="eyebrow">Defensive multiplayer-security laboratory</p>
         <h1>Investigation HUD</h1>
         <p class="lede">
-          Server-side telemetry review surface for suspicious players, protocol violations,
-          timing anomalies, and replayable evidence.
+          Review server-authoritative validation findings, inspect suspicious-player timelines,
+          and verify evidence generated from controlled client-abuse scenarios.
         </p>
-      </div>
 
-      <div class="status-card">
-        <span class="pulse"></span>
-        <div>
-          <p class="muted">API status</p>
-          <strong id="api-status">connecting</strong>
+        <div class="hero-tags" aria-label="Project capabilities">
+          <span>Rust authoritative server</span>
+          <span>Telemetry evidence</span>
+          <span>SQLite investigation DB</span>
+          <span>Read-only API</span>
         </div>
       </div>
+
+      <aside class="hero-status" aria-label="System status">
+        <div class="status-card">
+          <span class="pulse" aria-hidden="true"></span>
+          <div>
+            <p class="muted">Investigation API</p>
+            <strong id="api-status">connecting</strong>
+          </div>
+        </div>
+
+        <div class="system-card">
+          <p class="muted">Pipeline</p>
+          <strong>Client input → validation → evidence → review</strong>
+        </div>
+      </aside>
     </section>
 
-    <section class="metrics-grid">
+    <section class="metrics-grid" aria-label="Session metrics">
       <article class="metric panel">
-        <span class="metric-label">Events</span>
+        <span class="metric-label">Telemetry events</span>
         <strong id="event-count">—</strong>
       </article>
+
       <article class="metric panel">
-        <span class="metric-label">Violations</span>
+        <span class="metric-label">Validation findings</span>
         <strong id="violation-count">—</strong>
       </article>
+
       <article class="metric panel">
         <span class="metric-label">Suspicious players</span>
         <strong id="player-count">—</strong>
       </article>
+
       <article class="metric panel">
-        <span class="metric-label">Top severity score</span>
+        <span class="metric-label">Top triage score</span>
         <strong id="top-score">—</strong>
       </article>
     </section>
 
-    <section class="content-grid">
-      <article class="panel">
+    <section class="review-grid">
+      <article class="panel review-card">
         <div class="section-header">
           <div>
             <p class="eyebrow">Triage</p>
             <h2>Suspicious players</h2>
+            <p class="section-note">
+              Prioritized synthetic players with server-side validation findings.
+            </p>
           </div>
-          <button id="refresh-button" class="ghost-button">Refresh</button>
+
+          <button id="refresh-button" class="ghost-button" type="button">
+            Refresh evidence
+          </button>
         </div>
 
-        <div id="players-list" class="players-list"></div>
+        <div id="players-list" class="players-list" aria-live="polite"></div>
       </article>
 
-      <article class="panel">
+      <article class="panel review-card">
         <div class="section-header">
           <div>
-            <p class="eyebrow">Evidence</p>
+            <p class="eyebrow">Rule coverage</p>
             <h2>Violation breakdown</h2>
+            <p class="section-note">
+              Evidence grouped by validation rule, severity, and session time range.
+            </p>
           </div>
         </div>
 
-        <div id="violation-breakdown" class="breakdown-list"></div>
+        <div id="violation-breakdown" class="breakdown-list" aria-live="polite"></div>
       </article>
     </section>
 
     <section class="panel timeline-panel">
       <div class="section-header">
         <div>
-          <p class="eyebrow">Replay</p>
-          <h2>Player timeline</h2>
+          <p class="eyebrow">Case timeline</p>
+          <h2>Selected player evidence</h2>
+          <p class="section-note">
+            Server-time sequence of accepted commands, snapshots, and validation findings.
+          </p>
         </div>
 
-        <div class="player-picker">
+        <form class="player-picker" id="timeline-form">
           <label for="player-id-input">Player ID</label>
-          <input id="player-id-input" type="number" min="1" value="2">
-          <button id="load-timeline-button">Load</button>
-        </div>
+          <input id="player-id-input" type="number" min="1" value="2" inputmode="numeric">
+          <button id="load-timeline-button" type="submit">Load timeline</button>
+        </form>
       </div>
 
-      <div id="timeline" class="timeline"></div>
+      <div id="timeline" class="timeline" aria-live="polite"></div>
+    </section>
+
+    <section class="panel principles-panel">
+      <div>
+        <p class="eyebrow">Review discipline</p>
+        <h2>Evidence is not enforcement</h2>
+      </div>
+
+      <div class="principles-grid">
+        <article>
+          <strong>Server authority</strong>
+          <p>The client submits requests. The server owns final state and validates claims.</p>
+        </article>
+
+        <article>
+          <strong>Explainable findings</strong>
+          <p>Each finding preserves observed values, expected limits, rule meaning, and timeline context.</p>
+        </article>
+
+        <article>
+          <strong>False-positive awareness</strong>
+          <p>The dashboard supports review. It does not claim intent or perform punishment.</p>
+        </article>
+      </div>
     </section>
   </main>
 

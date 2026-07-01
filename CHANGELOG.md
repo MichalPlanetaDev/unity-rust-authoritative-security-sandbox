@@ -1,5 +1,41 @@
 # Changelog
 
+## v0.15.0 - Dashboard polish and screenshots
+
+Presentation-focused release preparing the repository homepage and investigation HUD for final portfolio review.
+
+Added:
+
+```text
+polished Investigation HUD layout
+improved dashboard visual hierarchy
+improved loading states
+improved empty states
+improved error states
+selected-player highlighting
+sorted suspicious-player triage
+sorted violation breakdown
+screenshot documentation
+screenshots directory
+dashboard overview screenshot
+player timeline screenshot
+recruiter-facing README homepage rewrite
+```
+
+Updated:
+
+```text
+dashboard/index.html
+dashboard/styles.css
+dashboard/dashboard.js
+docs/screenshots.md
+README.md
+```
+
+No backend detection systems were added in this milestone.
+
+The purpose of this release is to make the project visually credible, easier to review from the GitHub homepage, and ready for final portfolio presentation.
+
 ## v0.14.0 - Architecture and portfolio documentation freeze
 
 Documentation-focused release preparing the repository for recruiter review.

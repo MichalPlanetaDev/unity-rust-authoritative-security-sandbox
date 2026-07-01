@@ -1,8 +1,14 @@
 # Unity Rust Authoritative Security Sandbox
 
-A defensive multiplayer-security sandbox for server-authoritative validation, telemetry, evidence generation, and investigation tooling.
+A defensive multiplayer-security sandbox for server-authoritative validation, structured telemetry, evidence generation, and investigation tooling.
 
-This project models a small online-game security pipeline:
+![Investigation HUD overview](screenshots/dashboard-overview.png)
+
+This repository models a focused anti-cheat engineering workflow for an online multiplayer game: untrusted clients submit gameplay requests, the authoritative server validates those requests, suspicious behavior becomes evidence, and investigators can review the session through CLI, SQLite, API, and dashboard tools.
+
+It is not a commercial anti-cheat product and it does not contain offensive tooling. The project is a lawful, self-contained laboratory for demonstrating server authority, evidence quality, false-positive awareness, reproducible demos, and security-focused software engineering.
+
+## Core idea
 
 ```text
 untrusted client input
@@ -20,33 +26,52 @@ SQLite investigation database
 CLI / API / dashboard review
 ```
 
-The goal is not to build a commercial anti-cheat product and not to publish offensive tooling. The goal is to demonstrate the engineering discipline behind multiplayer security systems: distrust client authority, validate gameplay claims on the server, preserve evidence, support investigator workflows, and document false-positive risks.
+The client is treated as untrusted. It can request movement, firing, and hit claims, but it does not own final state. The server validates claims against authoritative state and records findings as reviewable evidence.
 
-## What this demonstrates
+## What this project proves
 
-- Server-authoritative multiplayer validation
-- Movement validation
-- Client timestamp validation
-- Packet sequence validation
-- Fire-rate validation
-- Protocol version validation
-- Per-connection rate limiting
-- Authoritative hit-claim validation
-- Structured JSONL telemetry
-- Evidence export to JSON and CSV
-- SQLite investigation database
-- CLI investigation queries
-- Read-only investigation API
-- Static investigation dashboard
-- Docker Compose demo
-- CI-ready Rust workspace
-- Defensive, lawful project scope
+| Area | Evidence in this repository |
+|---|---|
+| Server authority | Rust server owns player state, command validation, target validation, cooldowns, and rejection logic |
+| Game-security reasoning | Movement, timing, sequence, protocol, rate-limit, and hit-claim validation |
+| Evidence discipline | Findings include observed values, expected limits, severity, reason, player ID, sequence, and server time |
+| Investigation workflow | JSONL telemetry, evidence export, SQLite database, CLI queries, read-only API, dashboard HUD |
+| Production mindset | Docker demo, CI-ready workspace, feature freeze, threat model, false-positive analysis, release process |
+| Safety boundary | No cheat loaders, bypasses, injection tooling, kernel code, DMA tooling, or live-service targeting |
 
-## What this intentionally does not include
+## Current validation coverage
 
-This repository does not contain cheat loaders, game bypasses, DLL injection tooling, kernel code, DMA tooling, real-game offsets, credential theft, or instructions for attacking live services.
+| Validation area | Finding |
+|---|---|
+| Claimed movement exceeds server envelope | `SpeedHack` |
+| Fire request arrives before cooldown expires | `FireRateViolation` |
+| Action is impossible in current authoritative state | `InvalidStateTransition` |
+| Command sequence does not increase | `PacketSequenceViolation` |
+| Client timestamp moves backward or jumps too far | `ClientTimeViolation` |
+| Protocol message is malformed or unsupported | `ProtocolViolation` |
+| Connection exceeds message-rate limit | `RateLimitViolation` |
+| Client hit claim fails server geometry | `HitValidationViolation` |
 
-The abuse scenarios are synthetic and controlled. They exist only to test defensive validation and investigation workflows inside this toy sandbox.
+A finding is evidence, not punishment. This sandbox does not ban, kick, suspend, or penalize players.
+
+## Investigation dashboard
+
+The dashboard is served by the read-only investigation API and gives a recruiter-friendly view of the evidence pipeline.
+
+![Selected player timeline](screenshots/dashboard-player-timeline.png)
+
+The HUD shows:
+
+```text
+API health
+telemetry event count
+validation finding count
+suspicious player triage
+violation breakdown
+selected player evidence timeline
+```
+
+The dashboard does not read telemetry or SQLite directly. It consumes the API, keeping presentation separate from storage and investigation logic.
 
 ## Repository structure
 
@@ -58,7 +83,7 @@ crates/
   investigation/        SQLite storage and investigation queries
   investigation-api/    Read-only HTTP API and dashboard hosting
   server/               Authoritative TCP game-security server
-  bot/                  Controlled client scenarios
+  bot/                  Controlled synthetic client scenarios
   cli/                  Operator and investigation commands
 
 config/
@@ -66,8 +91,8 @@ config/
   docker.toml           Docker server configuration
 
 dashboard/
-  index.html            Static investigation dashboard
-  styles.css            Dashboard styling
+  index.html            Investigation HUD structure
+  styles.css            Dashboard visual system
   dashboard.js          API-backed dashboard behavior
 
 docs/
@@ -77,29 +102,48 @@ docs/
   false-positives.md
   investigation-workflow.md
   release-process.md
+  screenshots.md
 
-scripts/
-  docker-demo.sh        End-to-end Docker demonstration
+screenshots/
+  dashboard-overview.png
+  dashboard-player-timeline.png
 ```
 
-## Quick start
+## Technology stack
 
-Run all checks:
-
-```bash
-cargo fmt --all
-cargo check --workspace
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
+```text
+Rust
+Tokio
+Axum
+SQLite
+Serde
+Docker Compose
+Bash / Just
+Unity client integration scripts
+HTML / CSS / JavaScript dashboard
+GitHub Actions-ready workflow
 ```
 
-Run the full Docker demo:
+## Run the full demo
+
+The fastest review path is the Docker demo:
 
 ```bash
 just docker-demo
 ```
 
-The demo starts the server, runs normal and suspicious clients, generates telemetry, exports evidence, ingests the investigation database, runs database queries, starts the API, and smoke-tests the dashboard endpoints.
+The demo verifies the complete workflow:
+
+```text
+server starts
+synthetic clients run
+telemetry is generated
+evidence is exported
+SQLite investigation database is created
+database queries run
+investigation API starts
+API and dashboard routes pass smoke checks
+```
 
 Generated artifacts:
 
@@ -110,7 +154,7 @@ reports/evidence.csv
 reports/investigation.db
 ```
 
-## Local manual run
+## Manual local run
 
 Terminal 1:
 
@@ -132,7 +176,7 @@ cargo run -p bot -- hit
 cargo run -p bot -- bad-hit
 ```
 
-Then inspect telemetry:
+Inspect telemetry and evidence:
 
 ```bash
 cargo run -p cli -- summary samples/session.jsonl
@@ -147,7 +191,7 @@ Export evidence:
 cargo run -p cli -- export-evidence samples/session.jsonl reports/evidence.json reports/evidence.csv
 ```
 
-Create investigation database:
+Create the investigation database:
 
 ```bash
 cargo run -p cli -- ingest-db samples/session.jsonl reports/investigation.db
@@ -158,7 +202,7 @@ Query the database:
 ```bash
 cargo run -p cli -- query-db suspicious-players reports/investigation.db
 cargo run -p cli -- query-db violation-breakdown reports/investigation.db
-cargo run -p cli -- query-db player-timeline reports/investigation.db 2
+cargo run -p cli -- query-db player-timeline reports/investigation.db 8
 ```
 
 Start the API and dashboard:
@@ -173,87 +217,100 @@ Open:
 http://127.0.0.1:8080
 ```
 
-API smoke test:
-
-```bash
-cargo run -p investigation-api -- smoke 127.0.0.1:8080
-```
-
 ## Bot scenarios
-
-```bash
-cargo run -p bot -- normal
-cargo run -p bot -- suspicious
-cargo run -p bot -- sequence
-cargo run -p bot -- timing
-cargo run -p bot -- flood
-cargo run -p bot -- bad-protocol
-cargo run -p bot -- hit
-cargo run -p bot -- bad-hit
-```
-
-Scenario purpose:
 
 | Scenario | Purpose |
 |---|---|
 | `normal` | Baseline valid client behavior |
-| `suspicious` | Speed and fire-rate validation |
+| `suspicious` | Movement and fire-rate validation findings |
 | `sequence` | Repeated packet sequence rejection |
 | `timing` | Invalid client timestamp behavior |
-| `flood` | Message-rate limiter validation |
-| `bad-protocol` | Protocol version rejection |
+| `flood` | Connection message-rate limiter validation |
+| `bad-protocol` | Unsupported protocol version rejection |
 | `hit` | Valid hit-claim validation |
 | `bad-hit` | Invalid hit-claim evidence |
 
-## Detection rules
+Run a single scenario:
 
-Current validation findings:
-
-| Rule | Suspicion kind |
-|---|---|
-| Movement envelope exceeded | `SpeedHack` |
-| Fire cooldown violated | `FireRateViolation` |
-| Invalid state transition | `InvalidStateTransition` |
-| Packet sequence did not increase | `PacketSequenceViolation` |
-| Client timestamp invalid | `ClientTimeViolation` |
-| Protocol message invalid or unsupported | `ProtocolViolation` |
-| Connection message rate exceeded | `RateLimitViolation` |
-| Hit claim failed server geometry | `HitValidationViolation` |
-
-See:
-
-```text
-docs/rule-catalog.md
-docs/false-positives.md
+```bash
+cargo run -p bot -- bad-hit
 ```
 
-## Design principles
+## Architecture
 
-1. The client is untrusted.
-2. The server owns authoritative state.
-3. Validation emits evidence, not direct punishment.
-4. Findings must be explainable.
-5. False positives are treated as engineering failures.
-6. Investigation tooling is part of the system, not an afterthought.
-7. The repository remains lawful, defensive, and self-contained.
+```mermaid
+flowchart TD
+    A[Controlled Client / Unity Client] --> B[Line-delimited JSON Protocol]
+    B --> C[Authoritative Rust Server]
+    C --> D[Validation Engine]
+    D --> E[Structured Telemetry]
+    E --> F[JSONL Session Log]
+    F --> G[Evidence Records]
+    G --> H[SQLite Investigation DB]
+    H --> I[CLI Queries]
+    H --> J[Read-only Investigation API]
+    J --> K[Dashboard HUD]
+```
+
+The main trust boundary is between the client and the server.
+
+Trusted side:
+
+```text
+authoritative server state
+validation policy
+server clock
+telemetry writer
+evidence conversion
+investigation database
+read-only API
+```
+
+Untrusted side:
+
+```text
+client position claims
+client timestamps
+client sequence numbers
+client hit claims
+client target IDs
+client claimed distances
+client message rate
+client protocol version
+```
 
 ## Documentation
 
+| Document | Purpose |
+|---|---|
+| [Architecture](docs/architecture.md) | System design, crate responsibilities, data flow, trust boundaries |
+| [Threat model](docs/threat-model.md) | Assets, attacker model, abuse cases, safety scope |
+| [Rule catalog](docs/rule-catalog.md) | Validation findings, evidence fields, limitations |
+| [False-positive analysis](docs/false-positives.md) | Production risks, reviewer checklist, mitigation principles |
+| [Investigation workflow](docs/investigation-workflow.md) | How telemetry becomes reviewable evidence |
+| [Screenshots](docs/screenshots.md) | Final screenshot set and presentation standards |
+| [Release process](docs/release-process.md) | Quality gates, feature-freeze rule, release discipline |
+| [Security policy](SECURITY.md) | Defensive-use boundary and prohibited uses |
+| [Changelog](CHANGELOG.md) | Version history grounded in Git tags and commits |
+
+## Safety boundary
+
+This repository does not include:
+
 ```text
-docs/architecture.md              System architecture and data flow
-docs/threat-model.md              Assets, trust boundaries, abuse cases, scope
-docs/rule-catalog.md              Validation rules and evidence fields
-docs/false-positives.md           Known false-positive risks and controls
-docs/investigation-workflow.md    How evidence becomes reviewable information
-docs/release-process.md           Quality gates and release workflow
-SECURITY.md                       Safety boundary and responsible-use statement
-CHANGELOG.md                      Versioned project history
+cheat loaders
+game bypasses
+DLL injection tooling
+kernel evasion
+DMA tooling
+real-game memory scanning
+real-game offsets
+credential theft
+malware
+attacks against live games or services
+instructions for evading real anti-cheat systems
 ```
 
-## Status
+All suspicious behavior is synthetic and targets only this repository’s local toy server.
 
-Current feature-freeze target:
-
-```text
-v1.0.0  — final portfolio release
-```
+The intended impression is direct: this project is a defensive, evidence-based multiplayer-security sandbox built with server authority, reproducibility, and investigation workflow in mind.
