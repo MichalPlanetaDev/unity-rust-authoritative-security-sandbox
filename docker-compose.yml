@@ -81,6 +81,30 @@ services:
     depends_on:
       - server
 
+  bot-hit:
+    build: .
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /workspace
+    environment:
+      SERVER_ADDR: server:4000
+    command: bot hit
+    volumes:
+      - .:/workspace
+    depends_on:
+      - server
+
+  bot-bad-hit:
+    build: .
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /workspace
+    environment:
+      SERVER_ADDR: server:4000
+    command: bot bad-hit
+    volumes:
+      - .:/workspace
+    depends_on:
+      - server
+
   summary:
     build: .
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"

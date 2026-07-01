@@ -593,6 +593,7 @@ fn risk_weight(kind: &SuspicionKind) -> u32 {
         SuspicionKind::ClientTimeViolation => 20,
         SuspicionKind::ProtocolViolation => 35,
         SuspicionKind::RateLimitViolation => 15,
+        SuspicionKind::HitValidationViolation => 35,
     }
 }
 

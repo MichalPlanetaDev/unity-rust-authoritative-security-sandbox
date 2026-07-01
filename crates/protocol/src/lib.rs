@@ -9,6 +9,9 @@ pub type ConnectionId = u64;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct PlayerId(pub u64);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub struct EntityId(pub u64);
+
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Vec2 {
     pub x: f32,
@@ -27,11 +30,7 @@ impl Vec2 {
     }
 
     pub fn distance(self, other: Self) -> f32 {
-        Self {
-            x: self.x - other.x,
-            y: self.y - other.y,
-        }
-        .length()
+        self.subtract(other).length()
     }
 
     pub fn normalized(self) -> Self {
@@ -60,6 +59,17 @@ impl Vec2 {
             y: self.y + other.y,
         }
     }
+
+    pub fn subtract(self, other: Self) -> Self {
+        Self {
+            x: self.x - other.x,
+            y: self.y - other.y,
+        }
+    }
+
+    pub fn dot(self, other: Self) -> f32 {
+        self.x * other.x + self.y * other.y
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -73,6 +83,17 @@ pub struct InputCommand {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct HitClaim {
+    pub player_id: PlayerId,
+    pub sequence: SequenceNumber,
+    pub client_time_ms: Milliseconds,
+    pub origin: Vec2,
+    pub direction: Vec2,
+    pub target_id: EntityId,
+    pub claimed_distance: f32,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", content = "data")]
 pub enum ClientMessage {
     Join {
@@ -81,6 +102,7 @@ pub enum ClientMessage {
         protocol_version: Option<u32>,
     },
     Input(InputCommand),
+    HitClaim(HitClaim),
     Ping {
         client_time_ms: Milliseconds,
     },
@@ -103,6 +125,11 @@ pub enum ServerMessage {
         protocol_version: u32,
     },
     Snapshot(PlayerSnapshot),
+    HitAccepted {
+        player_id: PlayerId,
+        target_id: EntityId,
+        server_time_ms: Milliseconds,
+    },
     Rejected {
         reason: String,
     },
@@ -121,6 +148,7 @@ pub enum SuspicionKind {
     ClientTimeViolation,
     ProtocolViolation,
     RateLimitViolation,
+    HitValidationViolation,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -197,6 +225,11 @@ mod tests {
     }
 
     #[test]
+    fn calculates_dot_product() {
+        assert_eq!(Vec2::new(2.0, 3.0).dot(Vec2::new(4.0, 5.0)), 23.0);
+    }
+
+    #[test]
     fn serializes_join_with_protocol_version() {
         let message = ClientMessage::Join {
             player_id: PlayerId(1),
@@ -208,6 +241,25 @@ mod tests {
         assert!(json.contains("\"type\":\"Join\""));
         assert!(json.contains("\"player_id\":1"));
         assert!(json.contains("\"protocol_version\":1"));
+    }
+
+    #[test]
+    fn serializes_hit_claim() {
+        let message = ClientMessage::HitClaim(HitClaim {
+            player_id: PlayerId(7),
+            sequence: 1,
+            client_time_ms: 100,
+            origin: Vec2::ZERO,
+            direction: Vec2::new(1.0, 0.0),
+            target_id: EntityId(1001),
+            claimed_distance: 8.0,
+        });
+
+        let json = serde_json::to_string(&message).expect("message should serialize");
+
+        assert!(json.contains("\"type\":\"HitClaim\""));
+        assert!(json.contains("\"target_id\":1001"));
+        assert!(json.contains("\"claimed_distance\":8.0"));
     }
 
     #[test]
@@ -260,18 +312,18 @@ mod tests {
     }
 
     #[test]
-    fn creates_protocol_suspicion_report() {
+    fn creates_hit_validation_suspicion_report() {
         let report = SuspicionReport::new(
-            PlayerId(7),
-            0,
-            SuspicionKind::ProtocolViolation,
-            "unsupported protocol version",
-            999.0,
-            PROTOCOL_VERSION as f32,
+            PlayerId(8),
+            2,
+            SuspicionKind::HitValidationViolation,
+            "hit ray missed target",
+            5.0,
+            1.3,
             500,
         );
 
-        assert_eq!(report.kind, SuspicionKind::ProtocolViolation);
-        assert_eq!(report.expected_limit, 1.0);
+        assert_eq!(report.kind, SuspicionKind::HitValidationViolation);
+        assert_eq!(report.player_id, PlayerId(8));
     }
 }

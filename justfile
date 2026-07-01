@@ -125,3 +125,15 @@ docker-api:
 
 docker-api-smoke:
     HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm investigation-api-smoke
+
+bot-hit:
+    cargo run -p bot -- hit
+
+bot-bad-hit:
+    cargo run -p bot -- bad-hit
+
+docker-bot-hit:
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm bot-hit
+
+docker-bot-bad-hit:
+    HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose run --rm bot-bad-hit

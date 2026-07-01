@@ -43,6 +43,9 @@ Planned full pipeline:
 - API smoke test for Docker workflow
 - Static investigation dashboard
 - API-backed suspicious player and timeline HUD
+- Authoritative hit-claim validation
+- HitValidationViolation evidence
+- Hit and bad-hit bot scenarios
 
 ## Architecture
 
@@ -116,6 +119,11 @@ Investigation dashboard:
 Then open:
 
     http://127.0.0.1:8080
+
+Hit validation scenarios:
+
+    cargo run -p bot -- hit
+    cargo run -p bot -- bad-hit
 
 ## Docker run
 

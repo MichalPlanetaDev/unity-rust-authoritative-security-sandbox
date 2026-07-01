@@ -7,3 +7,5 @@ fire_cooldown_ms = 500
 max_client_time_step_ms = 250
 max_line_bytes = 4096
 max_messages_per_second = 30
+max_hit_distance_units = 40.0
+hit_tolerance_units = 0.5

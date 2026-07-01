@@ -26,6 +26,8 @@ docker compose run --rm bot-sequence
 docker compose run --rm bot-timing
 docker compose run --rm bot-flood
 docker compose run --rm bot-bad-protocol
+docker compose run --rm bot-hit
+docker compose run --rm bot-bad-hit
 
 docker compose run --rm summary
 docker compose run --rm risk
@@ -53,6 +55,9 @@ grep -q "ProtocolViolation" samples/session.jsonl
 
 grep -q "RateLimitViolation" reports/evidence.json
 grep -q "ProtocolViolation" reports/evidence.csv
+
+grep -q "HitValidationViolation" samples/session.jsonl
+grep -q "HitValidationViolation" reports/evidence.json
 
 echo
 echo "Docker demo finished successfully."

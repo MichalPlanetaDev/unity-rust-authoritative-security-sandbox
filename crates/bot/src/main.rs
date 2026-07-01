@@ -5,7 +5,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use protocol::{ClientMessage, InputCommand, PROTOCOL_VERSION, PlayerId, Vec2};
+use protocol::{ClientMessage, EntityId, HitClaim, InputCommand, PROTOCOL_VERSION, PlayerId, Vec2};
 
 const DEFAULT_SERVER_ADDR: &str = "127.0.0.1:4000";
 
@@ -53,6 +53,8 @@ fn run() -> io::Result<()> {
         },
         "flood" => return run_flood_scenario(&server_addr),
         "bad-protocol" => return run_bad_protocol_scenario(&server_addr),
+        "hit" => return run_hit_scenario(&server_addr),
+        "bad-hit" => return run_bad_hit_scenario(&server_addr),
         "help" | "--help" | "-h" => {
             print_help();
             return Ok(());
@@ -73,14 +75,7 @@ fn run() -> io::Result<()> {
     let reader_stream = stream.try_clone()?;
     let mut reader = BufReader::new(reader_stream);
 
-    send_message(
-        &mut stream,
-        &mut reader,
-        &ClientMessage::Join {
-            player_id: scenario.player_id,
-            protocol_version: Some(PROTOCOL_VERSION),
-        },
-    )?;
+    join(&mut stream, &mut reader, scenario.player_id)?;
 
     for command in scenario.commands {
         send_message(&mut stream, &mut reader, &ClientMessage::Input(command))?;
@@ -91,6 +86,78 @@ fn run() -> io::Result<()> {
     }
 
     Ok(())
+}
+
+fn run_hit_scenario(server_addr: &str) -> io::Result<()> {
+    let player_id = PlayerId(7);
+
+    println!("Connecting to {server_addr}");
+    println!("Scenario: hit");
+    println!("Player: {:?}", player_id);
+    println!();
+
+    let mut stream = connect_with_retry(server_addr, Duration::from_secs(10))?;
+    let reader_stream = stream.try_clone()?;
+    let mut reader = BufReader::new(reader_stream);
+
+    join(&mut stream, &mut reader, player_id)?;
+
+    send_message(
+        &mut stream,
+        &mut reader,
+        &ClientMessage::HitClaim(HitClaim {
+            player_id,
+            sequence: 1,
+            client_time_ms: 100,
+            origin: Vec2::ZERO,
+            direction: Vec2::new(1.0, 0.0),
+            target_id: EntityId(1001),
+            claimed_distance: 8.0,
+        }),
+    )
+}
+
+fn run_bad_hit_scenario(server_addr: &str) -> io::Result<()> {
+    let player_id = PlayerId(8);
+
+    println!("Connecting to {server_addr}");
+    println!("Scenario: bad-hit");
+    println!("Player: {:?}", player_id);
+    println!();
+
+    let mut stream = connect_with_retry(server_addr, Duration::from_secs(10))?;
+    let reader_stream = stream.try_clone()?;
+    let mut reader = BufReader::new(reader_stream);
+
+    join(&mut stream, &mut reader, player_id)?;
+
+    send_message(
+        &mut stream,
+        &mut reader,
+        &ClientMessage::HitClaim(HitClaim {
+            player_id,
+            sequence: 1,
+            client_time_ms: 100,
+            origin: Vec2::ZERO,
+            direction: Vec2::new(1.0, 0.0),
+            target_id: EntityId(9999),
+            claimed_distance: 8.0,
+        }),
+    )?;
+
+    send_message(
+        &mut stream,
+        &mut reader,
+        &ClientMessage::HitClaim(HitClaim {
+            player_id,
+            sequence: 2,
+            client_time_ms: 200,
+            origin: Vec2::ZERO,
+            direction: Vec2::new(1.0, 0.0),
+            target_id: EntityId(1002),
+            claimed_distance: 8.0,
+        }),
+    )
 }
 
 fn run_flood_scenario(server_addr: &str) -> io::Result<()> {
@@ -108,14 +175,7 @@ fn run_flood_scenario(server_addr: &str) -> io::Result<()> {
     let reader_stream = stream.try_clone()?;
     let mut reader = BufReader::new(reader_stream);
 
-    send_message(
-        &mut stream,
-        &mut reader,
-        &ClientMessage::Join {
-            player_id,
-            protocol_version: Some(PROTOCOL_VERSION),
-        },
-    )?;
+    join(&mut stream, &mut reader, player_id)?;
 
     for command in flood_commands(player_id) {
         write_message(&mut stream, &ClientMessage::Input(command))?;
@@ -145,6 +205,21 @@ fn run_bad_protocol_scenario(server_addr: &str) -> io::Result<()> {
         &ClientMessage::Join {
             player_id,
             protocol_version: Some(PROTOCOL_VERSION + 999),
+        },
+    )
+}
+
+fn join(
+    stream: &mut TcpStream,
+    reader: &mut BufReader<TcpStream>,
+    player_id: PlayerId,
+) -> io::Result<()> {
+    send_message(
+        stream,
+        reader,
+        &ClientMessage::Join {
+            player_id,
+            protocol_version: Some(PROTOCOL_VERSION),
         },
     )
 }
@@ -179,6 +254,8 @@ fn print_help() {
     println!("  cargo run -p bot -- timing");
     println!("  cargo run -p bot -- flood");
     println!("  cargo run -p bot -- bad-protocol");
+    println!("  cargo run -p bot -- hit");
+    println!("  cargo run -p bot -- bad-hit");
     println!();
     println!("Environment:");
     println!("  SERVER_ADDR=127.0.0.1:4000");

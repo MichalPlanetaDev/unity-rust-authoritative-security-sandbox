@@ -10,8 +10,8 @@ use std::{
 };
 
 use protocol::{
-    ClientMessage, InputCommand, Milliseconds, PROTOCOL_VERSION, PlayerId, PlayerSnapshot,
-    ServerMessage, SuspicionKind, SuspicionReport, TelemetryEvent, Vec2,
+    ClientMessage, EntityId, HitClaim, InputCommand, Milliseconds, PROTOCOL_VERSION, PlayerId,
+    PlayerSnapshot, ServerMessage, SuspicionKind, SuspicionReport, TelemetryEvent, Vec2,
 };
 use telemetry::TelemetryWriter;
 use tokio::{
@@ -21,7 +21,10 @@ use tokio::{
 };
 use tracing::{debug, error, info, warn};
 use tracing_subscriber::EnvFilter;
-use validation::{PlayerValidationState, ValidationPolicy, validate_input};
+use validation::{
+    HitValidationPolicy, PlayerValidationState, TargetSnapshot, ValidationPolicy,
+    validate_hit_claim, validate_input,
+};
 
 const DEFAULT_CONFIG_PATH: &str = "config/default.toml";
 
@@ -36,6 +39,8 @@ struct ServerConfig {
     max_client_time_step_ms: Milliseconds,
     max_line_bytes: usize,
     max_messages_per_second: u32,
+    max_hit_distance_units: f32,
+    hit_tolerance_units: f32,
 }
 
 impl ServerConfig {
@@ -58,6 +63,13 @@ impl ServerConfig {
             fixed_tick_ms: self.fixed_tick_ms,
             fire_cooldown_ms: self.fire_cooldown_ms,
             max_client_time_step_ms: self.max_client_time_step_ms,
+        }
+    }
+
+    fn hit_policy(&self) -> HitValidationPolicy {
+        HitValidationPolicy {
+            max_hit_distance_units: self.max_hit_distance_units,
+            hit_tolerance_units: self.hit_tolerance_units,
         }
     }
 
@@ -164,16 +176,41 @@ impl PlayerState {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+struct TargetState {
+    position: Vec2,
+    radius: f32,
+}
+
 struct GameWorld {
     config: ServerConfig,
     players: HashMap<PlayerId, PlayerState>,
+    targets: HashMap<EntityId, TargetState>,
 }
 
 impl GameWorld {
     fn new(config: ServerConfig) -> Self {
+        let mut targets = HashMap::new();
+
+        targets.insert(
+            EntityId(1001),
+            TargetState {
+                position: Vec2::new(8.0, 0.0),
+                radius: 0.8,
+            },
+        );
+        targets.insert(
+            EntityId(1002),
+            TargetState {
+                position: Vec2::new(0.0, 8.0),
+                radius: 0.8,
+            },
+        );
+
         Self {
             config,
             players: HashMap::new(),
+            targets,
         }
     }
 }
@@ -261,6 +298,11 @@ async fn run() -> io::Result<()> {
         max_line_bytes = config.max_line_bytes,
         max_messages_per_second = config.max_messages_per_second,
         "protocol firewall configured"
+    );
+    info!(
+        max_hit_distance_units = config.max_hit_distance_units,
+        hit_tolerance_units = config.hit_tolerance_units,
+        "hit validation configured"
     );
 
     let shared = Arc::new(SharedServer::new(config, telemetry));
@@ -529,6 +571,7 @@ fn process_message(
             }
         }
         ClientMessage::Input(command) => process_input(command, server_time_ms, shared),
+        ClientMessage::HitClaim(claim) => process_hit_claim(claim, server_time_ms, shared),
         ClientMessage::Ping { client_time_ms } => ServerMessage::Pong {
             client_time_ms,
             server_time_ms,
@@ -604,6 +647,121 @@ fn process_input(
             events.push(TelemetryEvent::PlayerSnapshot(snapshot.clone()));
 
             ServerMessage::Snapshot(snapshot)
+        }
+    };
+
+    for event in events {
+        shared.write_event(&event);
+    }
+
+    response
+}
+
+fn process_hit_claim(
+    claim: HitClaim,
+    server_time_ms: Milliseconds,
+    shared: &SharedServer,
+) -> ServerMessage {
+    let mut events = Vec::new();
+
+    let response = {
+        let mut world = shared.world.lock().expect("world lock poisoned");
+        let hit_policy = world.config.hit_policy();
+
+        let target = world
+            .targets
+            .get(&claim.target_id)
+            .copied()
+            .map(|target| TargetSnapshot {
+                target_id: claim.target_id,
+                position: target.position,
+                radius: target.radius,
+            });
+
+        let state = world
+            .players
+            .entry(claim.player_id)
+            .or_insert_with(PlayerState::new);
+
+        if claim.sequence <= state.last_sequence {
+            let report = SuspicionReport::new(
+                claim.player_id,
+                claim.sequence,
+                SuspicionKind::PacketSequenceViolation,
+                "hit claim sequence number did not increase",
+                claim.sequence as f32,
+                (state.last_sequence + 1) as f32,
+                server_time_ms,
+            );
+
+            warn!(
+                player_id = ?claim.player_id,
+                sequence = claim.sequence,
+                kind = ?report.kind,
+                "hit claim rejected"
+            );
+
+            events.push(TelemetryEvent::Suspicion(report));
+
+            ServerMessage::Rejected {
+                reason: "hit claim sequence number did not increase".to_string(),
+            }
+        } else if !state.alive {
+            let report = SuspicionReport::new(
+                claim.player_id,
+                claim.sequence,
+                SuspicionKind::InvalidStateTransition,
+                "dead player attempted to submit hit claim",
+                1.0,
+                0.0,
+                server_time_ms,
+            );
+
+            events.push(TelemetryEvent::Suspicion(report));
+
+            ServerMessage::Rejected {
+                reason: "dead player cannot submit hit claims".to_string(),
+            }
+        } else {
+            let decision = validate_hit_claim(&claim, target, hit_policy, server_time_ms);
+            let accepted = decision.accepted;
+            let rejection_reason = decision.rejection_reason.clone();
+
+            for report in decision.reports {
+                warn!(
+                    player_id = ?report.player_id,
+                    sequence = report.sequence,
+                    kind = ?report.kind,
+                    observed_value = report.observed_value,
+                    expected_limit = report.expected_limit,
+                    "hit validation failed"
+                );
+
+                events.push(TelemetryEvent::Suspicion(report));
+            }
+
+            if accepted {
+                state.last_sequence = claim.sequence;
+                state.last_client_time_ms = Some(claim.client_time_ms);
+
+                info!(
+                    player_id = ?claim.player_id,
+                    target_id = ?claim.target_id,
+                    sequence = claim.sequence,
+                    "hit claim accepted"
+                );
+
+                ServerMessage::HitAccepted {
+                    player_id: claim.player_id,
+                    target_id: claim.target_id,
+                    server_time_ms,
+                }
+            } else {
+                ServerMessage::Rejected {
+                    reason: rejection_reason
+                        .unwrap_or_else(|| "hit claim failed server validation".to_string()),
+                }
+            }
         }
     };
 
