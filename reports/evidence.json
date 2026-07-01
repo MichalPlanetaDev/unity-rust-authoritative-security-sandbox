@@ -7,7 +7,7 @@
     "reason": "claimed position exceeded server movement budget",
     "observed_value": 24.0,
     "expected_limit": 1.15,
-    "server_time_ms": 5149
+    "server_time_ms": 2937
   },
   {
     "player_id": 2,
@@ -15,9 +15,9 @@
     "violation_code": "FireRateViolation",
     "severity": "Medium",
     "reason": "fire input arrived before cooldown expired",
-    "observed_value": 5436.0,
-    "expected_limit": 5792.0,
-    "server_time_ms": 5436
+    "observed_value": 3225.0,
+    "expected_limit": 3581.0,
+    "server_time_ms": 3225
   },
   {
     "player_id": 3,
@@ -27,7 +27,7 @@
     "reason": "command sequence number did not increase",
     "observed_value": 1.0,
     "expected_limit": 2.0,
-    "server_time_ms": 7740
+    "server_time_ms": 4561
   },
   {
     "player_id": 4,
@@ -37,7 +37,7 @@
     "reason": "client timestamp did not increase",
     "observed_value": 50.0,
     "expected_limit": 101.0,
-    "server_time_ms": 10064
+    "server_time_ms": 5905
   },
   {
     "player_id": 4,
@@ -47,7 +47,7 @@
     "reason": "client timestamp jumped too far forward",
     "observed_value": 4950.0,
     "expected_limit": 250.0,
-    "server_time_ms": 10213
+    "server_time_ms": 6049
   },
   {
     "player_id": 5,
@@ -57,7 +57,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 31.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12502
+    "server_time_ms": 7205
   },
   {
     "player_id": 5,
@@ -67,7 +67,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 32.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12505
+    "server_time_ms": 7207
   },
   {
     "player_id": 5,
@@ -77,7 +77,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 33.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12508
+    "server_time_ms": 7208
   },
   {
     "player_id": 5,
@@ -87,7 +87,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 34.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12512
+    "server_time_ms": 7209
   },
   {
     "player_id": 5,
@@ -97,7 +97,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 35.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12515
+    "server_time_ms": 7211
   },
   {
     "player_id": 5,
@@ -107,7 +107,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 36.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12518
+    "server_time_ms": 7212
   },
   {
     "player_id": 5,
@@ -117,7 +117,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 37.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12521
+    "server_time_ms": 7213
   },
   {
     "player_id": 5,
@@ -127,7 +127,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 38.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12525
+    "server_time_ms": 7215
   },
   {
     "player_id": 5,
@@ -137,7 +137,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 39.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12528
+    "server_time_ms": 7216
   },
   {
     "player_id": 5,
@@ -147,7 +147,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 40.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12532
+    "server_time_ms": 7217
   },
   {
     "player_id": 5,
@@ -157,7 +157,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 41.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12535
+    "server_time_ms": 7218
   },
   {
     "player_id": 5,
@@ -167,7 +167,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 42.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12539
+    "server_time_ms": 7220
   },
   {
     "player_id": 5,
@@ -177,7 +177,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 43.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12543
+    "server_time_ms": 7222
   },
   {
     "player_id": 5,
@@ -187,7 +187,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 44.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12547
+    "server_time_ms": 7223
   },
   {
     "player_id": 5,
@@ -197,7 +197,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 45.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12550
+    "server_time_ms": 7224
   },
   {
     "player_id": 5,
@@ -207,7 +207,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 46.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12553
+    "server_time_ms": 7226
   },
   {
     "player_id": 5,
@@ -217,7 +217,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 47.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12557
+    "server_time_ms": 7227
   },
   {
     "player_id": 5,
@@ -227,7 +227,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 48.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12560
+    "server_time_ms": 7229
   },
   {
     "player_id": 5,
@@ -237,7 +237,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 49.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12564
+    "server_time_ms": 7230
   },
   {
     "player_id": 5,
@@ -247,7 +247,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 50.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12569
+    "server_time_ms": 7232
   },
   {
     "player_id": 5,
@@ -257,7 +257,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 51.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12574
+    "server_time_ms": 7233
   },
   {
     "player_id": 5,
@@ -267,7 +267,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 52.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12577
+    "server_time_ms": 7235
   },
   {
     "player_id": 5,
@@ -277,7 +277,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 53.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12580
+    "server_time_ms": 7236
   },
   {
     "player_id": 5,
@@ -287,7 +287,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 54.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12585
+    "server_time_ms": 7237
   },
   {
     "player_id": 5,
@@ -297,7 +297,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 55.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12591
+    "server_time_ms": 7238
   },
   {
     "player_id": 5,
@@ -307,7 +307,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 56.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12595
+    "server_time_ms": 7239
   },
   {
     "player_id": 5,
@@ -317,7 +317,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 57.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12595
+    "server_time_ms": 7241
   },
   {
     "player_id": 5,
@@ -327,7 +327,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 58.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12595
+    "server_time_ms": 7243
   },
   {
     "player_id": 5,
@@ -337,7 +337,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 59.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12595
+    "server_time_ms": 7244
   },
   {
     "player_id": 5,
@@ -347,7 +347,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 60.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12595
+    "server_time_ms": 7246
   },
   {
     "player_id": 5,
@@ -357,7 +357,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 61.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12598
+    "server_time_ms": 7247
   },
   {
     "player_id": 5,
@@ -367,7 +367,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 62.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12602
+    "server_time_ms": 7249
   },
   {
     "player_id": 5,
@@ -377,7 +377,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 63.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12607
+    "server_time_ms": 7250
   },
   {
     "player_id": 5,
@@ -387,7 +387,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 64.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12611
+    "server_time_ms": 7252
   },
   {
     "player_id": 5,
@@ -397,7 +397,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 65.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12617
+    "server_time_ms": 7253
   },
   {
     "player_id": 5,
@@ -407,7 +407,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 66.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12621
+    "server_time_ms": 7254
   },
   {
     "player_id": 5,
@@ -417,7 +417,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 67.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12625
+    "server_time_ms": 7256
   },
   {
     "player_id": 5,
@@ -427,7 +427,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 68.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12628
+    "server_time_ms": 7257
   },
   {
     "player_id": 5,
@@ -437,7 +437,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 69.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12631
+    "server_time_ms": 7259
   },
   {
     "player_id": 5,
@@ -447,7 +447,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 70.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12637
+    "server_time_ms": 7261
   },
   {
     "player_id": 5,
@@ -457,7 +457,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 71.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12640
+    "server_time_ms": 7262
   },
   {
     "player_id": 5,
@@ -467,7 +467,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 72.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12644
+    "server_time_ms": 7264
   },
   {
     "player_id": 5,
@@ -477,7 +477,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 73.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12648
+    "server_time_ms": 7265
   },
   {
     "player_id": 5,
@@ -487,7 +487,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 74.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12651
+    "server_time_ms": 7267
   },
   {
     "player_id": 5,
@@ -497,7 +497,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 75.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12655
+    "server_time_ms": 7268
   },
   {
     "player_id": 5,
@@ -507,7 +507,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 76.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12660
+    "server_time_ms": 7270
   },
   {
     "player_id": 5,
@@ -517,7 +517,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 77.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12664
+    "server_time_ms": 7272
   },
   {
     "player_id": 5,
@@ -527,7 +527,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 78.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12669
+    "server_time_ms": 7273
   },
   {
     "player_id": 5,
@@ -537,7 +537,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 79.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12673
+    "server_time_ms": 7275
   },
   {
     "player_id": 5,
@@ -547,7 +547,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 80.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12678
+    "server_time_ms": 7276
   },
   {
     "player_id": 5,
@@ -557,7 +557,7 @@
     "reason": "connection exceeded message rate limit",
     "observed_value": 81.0,
     "expected_limit": 30.0,
-    "server_time_ms": 12682
+    "server_time_ms": 7278
   },
   {
     "player_id": 6,
@@ -567,7 +567,7 @@
     "reason": "unsupported protocol version",
     "observed_value": 1000.0,
     "expected_limit": 1.0,
-    "server_time_ms": 15362
+    "server_time_ms": 9094
   },
   {
     "player_id": 8,
@@ -577,7 +577,7 @@
     "reason": "target does not exist",
     "observed_value": 9999.0,
     "expected_limit": 1.0,
-    "server_time_ms": 19348
+    "server_time_ms": 11209
   },
   {
     "player_id": 8,
@@ -587,7 +587,7 @@
     "reason": "claimed hit distance did not match server geometry",
     "observed_value": 8.0,
     "expected_limit": 0.5,
-    "server_time_ms": 19437
+    "server_time_ms": 11301
   },
   {
     "player_id": 8,
@@ -597,6 +597,6 @@
     "reason": "hit ray missed target",
     "observed_value": 8.0,
     "expected_limit": 1.3,
-    "server_time_ms": 19437
+    "server_time_ms": 11301
   }
 ]
